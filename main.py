@@ -178,9 +178,9 @@ async def on_ready():
     print(f'We have logged in as {bot.user}')
     print(f"\033[1;38;5;202mAvailable models: {model_blob}\033[0m")
     print(f"\033[1;38;5;46mCurrent model: {config['GPT_MODEL']}\033[0m")
-    while True:
-        bio = "LuminaryAI"
-        await bot.user.edit(username=bot.user.name, bio=bio)
+    # while True:
+    #     bio = "LuminaryAI"
+    #     await bot.user.edit(username=bot.user.name, bio=bio)
 
 
 
