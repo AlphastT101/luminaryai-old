@@ -274,13 +274,15 @@ def bbot(bot, cmd_log_channel_id, developer_members, start_time):
             title="AI commands",
             color=0x99ccff  # Convert hex color to integer
         )
-        embed_ai.add_field(name='`ai.imagine`', value="Generates images using SDXL according to user-inputes. We prefer to use the slash command `/imagine`", inline=False)
-        embed_ai.add_field(name='`ai.imagine.p`', value="Generates images using pollinations.ai according to user-inputes. We prefer to use the slash command `/imagine`", inline=False)
-        embed_ai.add_field(name='`ai.response`', value="Generates answers according to user-inputes. Message history available", inline=False)
+        embed_ai.add_field(name='`ai.imagine {prompt}`', value="Generates images using SDXL according to user-inputes. We prefer to use the slash command `/imagine`", inline=False)
+        embed_ai.add_field(name='`ai.imagine.p {prompt}`', value="Generates images using pollinations.ai according to user-inputes. We prefer to use the slash command `/imagine`", inline=False)
+        embed_ai.add_field(name='`ai.response {prompt}`', value="Generates answers according to user-inputes. Message history available", inline=False)
         embed_ai.add_field(name='`ai.aiml.start`', value="Enable AIML responses, You need a role with manage messages to run this command.", inline=False)
         embed_ai.add_field(name='`ai.aiml.stop`', value="Disable AIML responses, You need a role with manage messages to run this command.", inline=False)
         embed_ai.add_field(name='`ai.activate`', value="Disable AI responses, You need a role with manage messages to run this command.", inline=False)
         embed_ai.add_field(name='`ai.deactivate`', value="Disable AI responses, You need a role with manage messages to run this command.", inline=False)
+        embed_ai.add_field(name='`ai.searchimg {prompt}`', value="Disable AI responses, You need a role with manage messages to run this command.", inline=False)
+        embed_ai.add_field(name='`@luminaryai {prompt}`', value="Ping LuminaryAI to generate text and images.", inline=False)
 
 
 
