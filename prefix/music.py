@@ -234,9 +234,99 @@ def music(bot):
 
         else:
             await wait.edit(embed=alread_playing)
+    # queues = {}
 
-    # @bot.command(name="stop")
+    # @bot.command(name='play')
+    # @commands.cooldown(1, 5, commands.BucketType.user)
+    # async def play(ctx, *, song_name):
+    #     server_id = ctx.guild.id
+    #     if server_id not in server_loops:
+    #         server_loops[server_id] = False
 
+    #     file = discord.File("music.png", filename="thumbnail.png")
+    #     wait = await ctx.send(embed=pls_wait_embed, file=file)
+
+    #     if ctx.author.voice is None or ctx.author.voice.channel is None:
+    #         await wait.edit(embed=join_first_embed)
+    #         return
+
+    #     channel = ctx.author.voice.channel
+    #     voice_channel = ctx.voice_client
+
+    #     if voice_channel is None and channel is not None:
+    #         await wait.edit(embed=not_in_voice)
+    #         return
+
+    #     if server_id not in queues:
+    #         queues[server_id] = []
+
+    #     # Download the song information using yt_dlp
+    #     ydl_opts = {'format': 'bestaudio', 'noplaylist': True, 'no_warnings': True}
+    #     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+    #         info = ydl.extract_info(f"ytsearch:{song_name}", download=False)
+    #         if 'entries' in info and info['entries']:
+    #             first_entry = info['entries'][0]
+    #             song_name = first_entry.get('title', 'Unknown Title')
+    #             video_link = first_entry.get('url', 'Unknown Link')
+    #             duration = first_entry.get('duration', 0)
+    #             queues[server_id].append({'song_name': song_name, 'video_link': video_link, 'duration': duration})
+    #             shortened_video_link = shorten_url(video_link)  # Implement your URL shortening logic
+    #             duration_formatted = str(round(duration / 60, 2)) + " minutes"
+    #             now_playing = discord.Embed(
+    #                 title="Song added to queue",
+    #                 description=f"Name: {song_name} \n\nAudio link: {shortened_video_link}\n\n Song duration: {duration_formatted}",
+    #                 color=0x99ccff
+    #             )
+    #             now_playing.set_thumbnail(url="attachment://thumbnail.png")
+    #             await wait.edit(embed=now_playing)
+
+    #             # Check if the bot is connected to a voice channel and not playing
+    #             if voice_channel and not voice_channel.is_playing() and not server_loops[server_id]:
+    #                 await play_next_song(ctx)
+    #         else:
+    #             await wait.edit(embed=discord.Embed(title="LuminaryAI - music", description=f'No results found for: {song_name}', color=0xff0000))
+    #             return
+
+    # async def play_next_song(ctx):
+    #     server_id = ctx.guild.id
+    #     voice_channel = ctx.voice_client
+
+    #     if server_id in queues and queues[server_id]:
+    #         next_song = queues[server_id].pop(0)
+    #         song_name = next_song['song_name']
+    #         video_link = next_song['video_link']
+    #         duration = next_song['duration']
+    #         shortened_video_link = shorten_url(video_link)  # Implement your URL shortening logic
+    #         duration_formatted = str(round(duration / 60, 2)) + " minutes"
+
+    #         # Download the next song information using yt_dlp
+    #         ydl_opts = {'format': 'bestaudio', 'noplaylist': True, 'no_warnings': True}
+    #         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+    #             info = ydl.extract_info(video_link, download=False)
+    #             if 'entries' in info and info['entries']:
+    #                 next_song_info = info['entries'][0]
+    #                 queues[server_id].append({'song_name': next_song_info.get('title', 'Unknown Title'),
+    #                                         'video_link': video_link,
+    #                                         'duration': next_song_info.get('duration', 0)})
+
+    #                 # Define a callback function to play the next song
+    #                 def play_next(e):
+    #                     asyncio.run_coroutine_threadsafe(play_next_song(ctx), bot.loop)
+
+    #                 # Play the next song and set the callback
+    #                 voice_channel.play(discord.FFmpegPCMAudio(video_link, **FFMPEG_OPTIONS), after=play_next)
+    #                 playing_embed = discord.Embed(
+    #                     title="Now playing",
+    #                     description=f"{song_name}\n\nAudio link: {shortened_video_link}\n\n Song duration: {duration_formatted}",
+    #                     color=0x99ccff
+    #                 )
+    #                 file = discord.File("music.png", filename="thumbnail.png")
+    #                 playing_embed.set_thumbnail(url="attachment://thumbnail.png")
+    #                 await ctx.send(embed=playing_embed, file=file)
+    #             else:
+    #                 await ctx.send('Error: Unable to get information for the next song.')
+    #     else:
+    #         await ctx.send('Queue is empty.')
 
 
     @bot.command(name='leave')
