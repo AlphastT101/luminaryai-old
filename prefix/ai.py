@@ -179,7 +179,58 @@ async def generate_image_prodia(prompt, model, sampler, seed, neg):
 
 
 
+def detect_nsfw_request(query):
+    nsfw_keywords = [
+        'nsfw', 'adult', 'explicit', '18+', 'porn', 'xxx', 'sexual', 'indecent', 'lewd', 
+        'obscene', 'raunchy', 'risqué', 'sensual', 'vulgar', 'naughty', 'kinky', 'dirty', 
+        'lustful', 'provocative', 'stimulating', 'sultry', 'titillating', 'unwholesome', 
+        'filthy', 'smutty', 'offensive', 'lascivious', 'carnal', 'salacious', 'X-rated', 
+        'prurient', 'perverted', 'lecherous', 'horny', 'fetish', 'erogenous', 'nude', 
+        'sordid', 'scandalous', 'private parts', 'intimate areas', 'sensitive anatomy',
+        'naked','boob','boobies','anal','dick','fucker','fuck','fucking','without clothes','pornhub','blowjob','cum','boobjob','xxxx','xxxxx','xxxxxxx','xxxxxxxx'
+    ]
 
+
+    # Convert query to lowercase for case-insensitive matching
+    query_lower = query.lower()
+
+    # Check if any NSFW keyword is present in the query
+    for keyword in nsfw_keywords:
+        if keyword in query_lower:
+            return True  # NSFW request detected
+
+    return False  # Safe request
+
+def search_photo(query):
+    if not detect_nsfw_request(query):
+        base_url = "https://www.googleapis.com/customsearch/v1"
+        api_key = 'AIzaSyAh3oa-_3Zron_GNpXKnwxzIeuTrYrluFs'
+        cx = '126be3d6257454161'
+        params = {
+            'q': f"{query} image",
+            'searchType': 'image',
+            'key': api_key,
+            'cx': cx,
+        }
+
+        # Make the request to Google Custom Search API
+        response = requests.get(base_url, params=params)
+
+        if response.status_code == 200:
+            # Parse the JSON response
+            result = response.json()
+
+            # Check if there are image results
+            if 'items' in result and result['items']:
+                # Extract the URL of the first image
+                photo_url = result['items'][0]['link']
+                return photo_url
+            else:
+                return "No image found."
+        else:
+            return f"Error: {response.status_code}"
+    else:
+        return "Bad"
 
 
 
@@ -500,3 +551,25 @@ def ai(bot, cmd_log_channel_id):
                 color=0xFF0000
             )
             await msg.edit(embed=error_embed)
+
+
+    @bot.command(name='searchimg')
+    async def searchimg(ctx,* , query):
+        a = search_photo(query)
+        if a == "Bad":
+            bad_embd = discord.Embed(
+                title="LuminaryAI - Image search",
+                description=f"Requested by: {ctx.author}\nPrompt: {query}\n\n ⚠️ Can't search for image.",
+                color="0xFF0000"
+            )
+            file = discord.File("web_search.png", filename="web_search.png")
+            bad_embd.set_thumbnail(url="attachment://web_search.png")
+            await ctx.send(bad_embd, file=file)
+        else:
+            embed = discord.Embed(
+                title="LuminaryAI - Image search",
+                description=f'Requested by: {ctx.author}\nPrompt: {query}',
+                color=0x99ccff,
+            )
+            embed.set_image(url=a)
+            await ctx.send(embed=embed)
