@@ -4,18 +4,22 @@ import discord
 # from PIL import Image
 import datetime
 import time
-
+from discord.ext import commands
 def bot_slash(bot, cmd_log_channel_id,start_time):
 
     ##### check #######
+    @commands.guild_only()
     @bot.tree.command(name="status", description="Check bot status")
+    @commands.guild_only()
     async def check(interaction: discord.Interaction):
         await interaction.response.send_message("bot is online")
 
         await bot.get_channel(cmd_log_channel_id).send(f"{interaction.user} used status(slash) command in {interaction.guild.name}")
 
     ##### help #######
+    @commands.guild_only()
     @bot.tree.command(name="help", description="Help/command list")
+    @commands.guild_only()
     async def help(interaction: discord.Interaction):
         help_ = discord.Embed(
             title='Help/command list',
@@ -40,7 +44,9 @@ def bot_slash(bot, cmd_log_channel_id,start_time):
 
 
     ############## about ##################
+    @commands.guild_only()
     @bot.tree.command(name="about", description="about the bot")
+    @commands.guild_only()
     async def about(interaction: discord.Interaction):
         current_time = time.time()
         difference = int(round(current_time - start_time))
@@ -52,7 +58,7 @@ def bot_slash(bot, cmd_log_channel_id,start_time):
             color=0x99ccff  # Convert hex color to integer
         )
         about.add_field(name='Owner', value="alphast101", inline=True)
-        about.add_field(name='Used languages', value="Python 3.11 | AIML 0.9.2 | discord.py 2.3.2", inline=True)
+        about.add_field(name='Used languages', value="Python 3.11 discord.py 2.3.2", inline=True)
         about.set_author(name="alphast101", icon_url="https://cdn.discordapp.com/avatars/1026388699203772477/8964c60e7cd3dd4b919811e566e5ccb7.webp?size=80")
         about.add_field(name='Uptime', value=str(uptime_duration), inline=True)
         about.add_field(name='AI engine', value="Luminary", inline=True)
@@ -63,4 +69,3 @@ def bot_slash(bot, cmd_log_channel_id,start_time):
         await interaction.response.send_message(embed=about, file=discord.File(filename, filename="ai.png"))
 
         await bot.get_channel(cmd_log_channel_id).send(f"{interaction.user} used about(slash) command in {interaction.guild.name}")
-

@@ -290,7 +290,7 @@ def bbot(bot, cmd_log_channel_id, developer_members, start_time):
             title="general commands",
             color=0x99ccff  # Convert hex color to integer
         )
-        embed_general.add_field(name='`user {mention}`', value="Shows username & avatar. if you enable developer mode, then it also displays userID, account creation date & guild join date.", inline=False)
+        embed_general.add_field(name='`ai.user {mention}`', value="Shows username & avatar. if you enable developer mode, then it also displays userID, account creation date & guild join date.", inline=False)
 
 
 
@@ -298,17 +298,18 @@ def bbot(bot, cmd_log_channel_id, developer_members, start_time):
             title="fun commands",
             color=0x99ccff  # Convert hex color to integer
         )
-        embed_fun.add_field(name='`rps {your move}`', value="play RPS with the bot", inline=False)
-        embed_fun.add_field(name='`meme`', value="Shows a meme", inline=False)
-        embed_fun.add_field(name='`cat`', value="shows a cat", inline=False)
-        embed_fun.add_field(name='`randomfact`', value="Shows a random fact", inline=False)
+        embed_fun.add_field(name='`ai.rps {your move}`', value="play RPS with the bot", inline=False)
+        embed_fun.add_field(name='`ai.meme`', value="Shows a meme", inline=False)
+        embed_fun.add_field(name='`ai.cat`', value="shows a cat", inline=False)
+        embed_fun.add_field(name='`ai.randomfact`', value="Shows a random fact", inline=False)
 
 
 
         embed_moderation = discord.Embed(
-            title="moderation commands - under development",
+            title="Moderation commands",
             color=0x99ccff  # Convert hex color to integer
         )
+        embed_moderation.add_field(name='`ai.purge`', value="Purge messages, you need proper permissions to use this command.", inline=False)
 
 
 
