@@ -475,14 +475,19 @@ def ai(bot, cmd_log_channel_id):
     @bot.command(name='imagine.p')
     async def imagine_m2_command(ctx, *, prompt: str = None):
         if prompt is None:
-            await embed(ctx, "LuminaryAI - answer generation", "Please enter your prompt", color=0x99ccff)
+            await ctx.reply("**Please enter your prompt!**", delete_after=3)
             return
         async with aiohttp.ClientSession() as session:
             try:
-                
-                send_embed = embed(ctx, "LuminaryAI - Image generation",)
+                send_embed = discord.Embed(
+                    title="LuminaryAI - Image generation",
+                    description=f"Requested by: {ctx.author}\nPrompt: {prompt}",
+                    color=0x99ccff
+                )
                 image = await poly_image_gen(session, prompt)
-                await ctx.reply(file=discord.File(image, 'generated_image.png'))
+                file=discord.File(image, 'generated_image.png')
+                send_embed.set_image(url=f'attachment://generated_image.png')
+                await ctx.reply(embed=send_embed, file=file)
             except Exception as e:
                 print(f"An error occurred: {e}")
                 await ctx.reply("An error occurred while generating the image. Please try again.")
