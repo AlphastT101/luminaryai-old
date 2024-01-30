@@ -71,8 +71,8 @@ def ai_slash(bot):
 
         if seed is None:
             seed = random.randint(10000, 99999)
-        # await ctx.response.defer()
-        await interaction.response.defer(ephemeral=False)
+
+        await interaction.response.defer(ephemeral=False) ######## defer
         model_uid = Model[model.value].value[0]
 
         imagefileobj = await generate_image_prodia(prompt, model_uid, sampler.value, seed)

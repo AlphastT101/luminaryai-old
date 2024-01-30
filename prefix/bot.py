@@ -32,95 +32,186 @@ def bbot(bot, cmd_log_channel_id, developer_members, start_time):
         await ctx.send(embed=about, file=discord.File(filename, filename="ai.png"))
 
 
-    ############### Help ########################
+    ############### info ########################
     @bot.command(name='info')
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def help_command(ctx, command_info: str = None):
         rps = discord.Embed(
-            title="Help: RPS",
+            title="Help: ai.rps",
             description="Play RPS with the bot",
             color=0x99ccff
         )
         rps.add_field(name='Syntax:', value='```ai.rps {your move}```')
 
         cat = discord.Embed(
-            title="Help: cat",
+            title="Help: ai.cat",
             description="Shows a random cat picture",
             color=0x99ccff
         )
         cat.add_field(name='Syntax:', value='```ai.cat```')
 
-        meme = discord.Embed(
-            title="Help: meme",
-            description="Shows a random meme",
-            color=0x99ccff
-        )
-        meme.add_field(name='Syntax:', value='```ai.meme```')
 
         randomfact = discord.Embed(
-            title="Help: randomfact",
+            title="Help: ai.randomfact",
             description="shows a randomfact about the world",
             color=0x99ccff
         )
         randomfact.add_field(name='Syntax:', value='```ai.randomfact```')
 
         user = discord.Embed(
-            title="Help: user",
+            title="Help: ai.user",
             description="Shows user ID, username, user avatar. \n user_mention is optional",
             color=0x99ccff
         )
         user.add_field(name='Syntax:', value='```ai.user {user_mention}```')
 
         start = discord.Embed(
-            title="Help: start",
-            description="Initiate AI responses by executing the ?start command. The bot will respond when the `?start` command is triggered. Prefix commands won't function while AI responses are active. To deactivate AI responses, use the ?stop command.",
+            title="Help: ai.aiml.start",
+            description="Initiate AIML responses by executing the ?start command. The bot will respond when the `?start` command is triggered. Prefix commands won't function while AI responses are active. To deactivate AI responses, use the ?stop command.",
             color=0x99ccff
         )
         start.add_field(name='Syntax:', value='```ai.start```')
 
         stop = discord.Embed(
-            title="Help: stop",
-            description="Disable AI responses",
+            title="Help: ai.aiml.stop",
+            description="Disable AIML responses",
             color=0x99ccff
         )
         stop.add_field(name='Syntax:', value='```ai.stop```')
 
-        img = discord.Embed(
-            title="Help: img",
+        imagine = discord.Embed(
+            title="Help: ai.imagine",
             description="Generate images!",
             color=0x99ccff
         )
-        img.add_field(name='Syntax:', value='```ai.imagine {prompt}```')
-        img.add_field(name='Example:', value='```ai.imagine bmw m4```')
+        imagine.add_field(name='Syntax:', value='```ai.imagine {prompt}```')
+        imagine.add_field(name='Example:', value='```ai.imagine bmw m4```')
+
+        imagine_p = discord.Embed(
+            title="Help: ai.imagine.p",
+            description="Generate images using pollonations.ai",
+            color=0x99ccff
+        )
+        imagine_p.add_field(name='Syntax:', value='```ai.imagine.p {prompt}```')
+        imagine_p.add_field(name='Example:', value='```ai.imagine.p bmw m4```')
+
+        search = discord.Embed(
+            title="Help: ai.search",
+            description="Search the Wiki",
+            color=0x99ccff
+        )
+        search.add_field(name='Syntax:', value='```ai.search {prompt}```')
+        search.add_field(name='Example:', value='```ai.search what is hydrogen?```')
+
+        searchimg = discord.Embed(
+            title="Help: ai.searchimg",
+            description="Search the web for images",
+            color=0x99ccff
+        )
+        searchimg.add_field(name='Syntax:', value='```ai.searchimg {prompt}```')
+        searchimg.add_field(name='Example:', value='```ai.searchimg apple```')
+
+        purge = discord.Embed(
+            title="Help: ai.purge",
+            description="Purge recent messages. Both you and LuminaryAI need the 'Manage Messages' permission",
+            color=0x99ccff
+        )
+        purge.add_field(name='Syntax:', value='```ai.purge {number of messages}```')
+        purge.add_field(name='Example:', value='```ai.purge 50```')
 
         ai = discord.Embed(
-            title="Help: ai",
+            title="Help: ai.response",
             description="Generate answers!",
             color=0x99ccff
         )
         ai.add_field(name='Syntax:', value='```ai.response {prompt}```')
-        ai.add_field(name='Example:', value='```ai.response Write a complex python code.```')
+        ai.add_field(name='Example:', value='```ai.response What is discord.py?```')
+
+        loop = discord.Embed(
+            title="Help: ai.loop",
+            description="Loop the current music",
+            color=0x99ccff
+        )
+        loop.add_field(name='Syntax:', value='```ai.loop```')
+
+        play = discord.Embed(
+            title="Help: ai.play",
+            description="Play a music from the internet",
+            color=0x99ccff
+        )
+        play.add_field(name='Syntax:', value='```ai.play {song name}```')
+        play.add_field(name='Example:', value='```ai.play Cruel summer```')
+
+
+        leave = discord.Embed(
+            title="Help: ai.leave",
+            description="Stop the playback and leave the voice channel.",
+            color=0x99ccff
+        )
+        leave.add_field(name='Syntax:', value='```ai.leave```')
+
+        join = discord.Embed(
+            title="Help: ai.join",
+            description="Join your voice channel.",
+            color=0x99ccff
+        )
+        join.add_field(name='Syntax:', value='```ai.join```')
+    
+
+
+        developer = discord.Embed(
+            title="Help: ai.developer",
+            description="Enable developer mode. This will display a bit more detail in the outputs.",
+            color=0x99ccff
+        )
+        developer.add_field(name='Syntax:', value='```ai.developer {choice}```')
+        developer.add_field(name='Syntax:', value='```ai.developer true```')
+
+        uptime = discord.Embed(
+            title="Help: ai.uptime",
+            description="Shows bot uptime.",
+            color=0x99ccff
+        )
+        uptime.add_field(name='Syntax:', value='```ai.uptime```')
 
         if command_info is None:
-            await ctx.send("Invalid command", delete_after=3)
+            await ctx.send("**Invalid command**", delete_after=3)
         elif command_info.lower() == "rps":
             await ctx.send(embed=rps)
         elif command_info.lower() == "cat":
             await ctx.send(embed=cat)
-        elif command_info.lower() == "meme":
-            await ctx.send(embed=meme)
         elif command_info.lower() == "randomfact":
             await ctx.send(embed=randomfact)
-        elif command_info.lower() == "start":
+        elif command_info.lower() == "aiml.start":
             await ctx.send(embed=start)
-        elif command_info.lower() == "stop":
+        elif command_info.lower() == "aiml.stop":
             await ctx.send(embed=stop)
         elif command_info.lower() == "user":
             await ctx.send(embed=user)
         elif command_info.lower() == "imagine":
-            await ctx.send(embed=img)
+            await ctx.send(embed=imagine)
+        elif command_info.lower() == "imagine.p":
+            await ctx.send(embed=imagine_p)
+        elif command_info.lower() == "purge":
+            await ctx.send(embed=purge)
+        elif command_info.lower() == "search":
+            await ctx.send(embed=search)
+        elif command_info.lower() == "searchimg":
+            await ctx.send(embed=searchimg)
         elif command_info.lower() == "response":
             await ctx.send(embed=ai)
+        elif command_info.lower() == "join":
+            await ctx.send(embed=join)
+        elif command_info.lower() == "loop":
+            await ctx.send(embed=loop)
+        elif command_info.lower() == "leave":
+            await ctx.send(embed=leave)
+        elif command_info.lower() == "join":
+            await ctx.send(embed=join)
+        elif command_info.lower() == "developer":
+            await ctx.send(embed=developer)
+        elif command_info.lower() == "uptime":
+            await ctx.send(embed=uptime)
         else:
             await ctx.send("invalid command")
 
@@ -299,7 +390,6 @@ def bbot(bot, cmd_log_channel_id, developer_members, start_time):
             color=0x99ccff  # Convert hex color to integer
         )
         embed_fun.add_field(name='`ai.rps {your move}`', value="play RPS with the bot", inline=False)
-        embed_fun.add_field(name='`ai.meme`', value="Shows a meme", inline=False)
         embed_fun.add_field(name='`ai.cat`', value="shows a cat", inline=False)
         embed_fun.add_field(name='`ai.randomfact`', value="Shows a random fact", inline=False)
 
