@@ -4,7 +4,7 @@ from discord.ui import Select, View
 import datetime
 import time
 
-def bbot(bot, cmd_log_channel_id, developer_members, start_time):
+def bbot(bot, developer_members, start_time):
 
     ############### About ########################
     @bot.command(name='about', aliases=["!about", "/about"])
@@ -213,9 +213,7 @@ def bbot(bot, cmd_log_channel_id, developer_members, start_time):
         elif command_info.lower() == "uptime":
             await ctx.send(embed=uptime)
         else:
-            await ctx.send("invalid command")
-
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used info command in {ctx.guild.name}")
+            await ctx.send("**invalid command**",delete_after=3)
 
 
 
@@ -246,7 +244,6 @@ def bbot(bot, cmd_log_channel_id, developer_members, start_time):
             await ctx.send("**This command is restricted**", delete_after=3)
 
 
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} mp command in {ctx.guild.name}")
 
     @bot.command(name="serverinv")
     async def list_serversinv(ctx):
@@ -274,8 +271,6 @@ def bbot(bot, cmd_log_channel_id, developer_members, start_time):
             await ctx.send("**This command is restricted**", delete_after=3)
 
 
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used serverinv command in {ctx.guild.name}")
-
 
 
     @bot.command(name="server")
@@ -299,7 +294,6 @@ def bbot(bot, cmd_log_channel_id, developer_members, start_time):
         else:
             await ctx.send("**This command is restricted**", delete_after=3)
 
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used server command in {ctx.guild.name}")
 
     @bot.command(name="servermem")
     async def list_server_members(ctx, *, server_name: str):
@@ -323,7 +317,6 @@ def bbot(bot, cmd_log_channel_id, developer_members, start_time):
             await ctx.send("**This command is restricted**", delete_after=3)
 
 
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used servermem command in {ctx.guild.name}")
 
     @bot.command(name="developer")
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -370,10 +363,12 @@ def bbot(bot, cmd_log_channel_id, developer_members, start_time):
         embed_ai.add_field(name='`ai.response {prompt}`', value="Generates answers according to user-inputes. Message history available", inline=False)
         embed_ai.add_field(name='`ai.aiml.start`', value="Enable AIML responses, You need a role with manage messages to run this command.", inline=False)
         embed_ai.add_field(name='`ai.aiml.stop`', value="Disable AIML responses, You need a role with manage messages to run this command.", inline=False)
-        embed_ai.add_field(name='`ai.activate`', value="Disable AI responses, You need a role with manage messages to run this command.", inline=False)
-        embed_ai.add_field(name='`ai.deactivate`', value="Disable AI responses, You need a role with manage messages to run this command.", inline=False)
-        embed_ai.add_field(name='`ai.searchimg {prompt}`', value="Disable AI responses, You need a role with manage messages to run this command.", inline=False)
+        embed_ai.add_field(name='`ai.activate` **[DISABLED]**', value="Enable AI responses, You need a role with manage messages to run this command.\nModel: *Luminary*", inline=False)
+        embed_ai.add_field(name='`ai.deactivate` **[DISABLED]**', value=" Disable AI responses, You need a role with manage messages to run this command.", inline=False)
+        embed_ai.add_field(name='`ai.searchimg {prompt}`', value="Search the web for images.", inline=False)
         embed_ai.add_field(name='`@luminaryai {prompt}`', value="Ping LuminaryAI to generate text and images.", inline=False)
+        embed_ai.add_field(name='`@luminaryai activate`', value="Enable AI responses using Luminary-ultra. You need admin permissions to run this command.", inline=False)
+        embed_ai.add_field(name='`@luminaryai deactivate`', value="Disable AI responses. You need admin permissions to run this command..", inline=False)
 
 
 

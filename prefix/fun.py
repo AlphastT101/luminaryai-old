@@ -123,7 +123,7 @@ facts = [
 ]
 
 
-def fun(bot, cmd_log_channel_id):
+def fun(bot):
     ############### meme #######################
     @bot.command(name="meme", aliases=['!meme', '/meme'])
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -140,8 +140,6 @@ def fun(bot, cmd_log_channel_id):
         else:
             await ctx.reply("An error occurred.")
 
-
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used meme command in {ctx.guild.name}")
 
 
     ############## cat ######################
@@ -160,8 +158,6 @@ def fun(bot, cmd_log_channel_id):
         else:
             await ctx.reply("An error occurred.", delete_after=5)
 
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used cat command in {ctx.guild.name}")
-
 
     ####### random fact #########
     @bot.command(name="randomfact", aliases=['!randomfact', '/randomfact'])
@@ -173,8 +169,6 @@ def fun(bot, cmd_log_channel_id):
             color=0x0000ff
             )
         await ctx.send(embed=random_fact_embed)
-
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used randomfact command in {ctx.guild.name}")
 
 
     ############################# RPS ##########################
@@ -209,7 +203,5 @@ def fun(bot, cmd_log_channel_id):
         outcome = outcomes[user_choice.lower()][bot_choice]
 
         # Send a message with the result
-        await ctx.send(f"You choose {user_choice}.\nI choose {bot_choice}.\nYou {outcome}!")
-
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used RPS command in {ctx.guild.name}")
+        await ctx.send(f"**You choose {user_choice}**.\n**I choose {bot_choice}.**\n**You {outcome}!**")
 

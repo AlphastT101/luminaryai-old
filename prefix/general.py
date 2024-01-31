@@ -5,7 +5,7 @@ from PIL import Image
 import requests
 import io
 
-def general(bot,cmd_log_channel_id, developer_members):
+def general(bot, developer_members):
 
     ####################### user #########################
     @bot.command(name='user', aliases=['!user', '/user'])
@@ -136,5 +136,3 @@ def general(bot,cmd_log_channel_id, developer_members):
 
             # Remove the temporary file after sending
             os.remove(temp_filename)
-
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} user command in {ctx.guild.name}")

@@ -6,6 +6,7 @@ from discord.ext import commands
 
 def moderation(bot):
     @bot.command(name='purge', help='Deletes a specified number of messages')
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def purge(ctx, num_messages: str = None):
         channel = ctx.channel
         if ctx.author.guild_permissions.manage_messages:

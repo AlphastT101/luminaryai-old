@@ -26,7 +26,7 @@ intents = discord.Intents.all()
 activity = discord.Game(name="ai.help")
 bot = commands.Bot(command_prefix=input("Enter COMMAND PREFIX: "), intents=intents, activity=activity, status=discord.Status.do_not_disturb, help_command=None, reconnect=False)
 
-cmd_log_channel_id = int(input("Enter log channel ID: "))
+# cmd_log_channel_id = int(input("Enter log channel ID: "))
 error_log_channel_id = int(input("Enter error log channel ID: "))
 
 
@@ -34,7 +34,6 @@ start_time = time.time()
 
 
 bbot(bot,
-    cmd_log_channel_id,
     developer_members,
     start_time
     )
@@ -42,20 +41,16 @@ bbot(bot,
 music(bot)
 
 fun(bot,
-    cmd_log_channel_id,
     )
 
 general(bot,
-        cmd_log_channel_id,
         developer_members
         )
 
 ai(bot,
-   cmd_log_channel_id,
    )
 
 bot_slash(bot,
-    cmd_log_channel_id,
     start_time
     )
 
@@ -159,6 +154,7 @@ chatbot = SimpleChatbot()
 
 
 @bot.command()
+@commands.cooldown(1, 15, commands.BucketType.user)
 async def uptime(ctx):
     current_time = time.time()
     difference = int(round(current_time - start_time))
@@ -230,7 +226,7 @@ async def cmdd(ctx):
         return
 
 
-member_histories_msg = {}  # Dictionary to store conversation history for each member
+# member_histories_msg = {}  # Dictionary to store conversation history for each member
 @bot.event
 async def on_message(message):
     if message.author == bot.user or message.author.bot:
@@ -240,8 +236,8 @@ async def on_message(message):
         return
     # Get or create server-specific data and set AI responses as false
     server_id = message.guild.id
-    if server_id not in server_data_ai:
-        server_data_ai[server_id] = {'response_enabled': False}
+    # if server_id not in server_data_ai:
+    #     server_data_ai[server_id] = {'response_enabled': False}
     if server_id not in server_data_aiml:
         server_data_aiml[server_id] = {'response_enabled': False}
 
@@ -258,30 +254,30 @@ async def on_message(message):
                 # Handle HTTPException by printing an error message
                 return
             
-    elif server_data_ai[server_id]['response_enabled'] and server_id in ai_channels and message.channel.id == ai_channels[server_id]:
-        member_id = str(message.author.id)  # Using member ID as the key
-        history = member_histories_msg.get(member_id, [])
+    # elif server_data_ai[server_id]['response_enabled'] and server_id in ai_channels and message.channel.id == ai_channels[server_id]:
+    #     member_id = str(message.author.id)  # Using member ID as the key
+    #     history = member_histories_msg.get(member_id, [])
 
-        answer_embed = discord.Embed(
-            title="LuminaryAI - answer generation",
-            description="Generating answer...",
-            color=0x99ccff
-        )
-        answer = await message.reply(embed=answer_embed)
+    #     answer_embed = discord.Embed(
+    #         title="LuminaryAI - answer generation",
+    #         description="Generating answer...",
+    #         color=0x99ccff
+    #     )
+    #     answer = await message.reply(embed=answer_embed)
 
 
-        user_input = message.content
-        generated_message, updated_history = await generate_response_act(message, user_input, history)
+    #     user_input = message.content
+    #     generated_message, updated_history = await generate_response_act(message, user_input, history)
 
-        # Update member-specific history
-        member_histories_msg[member_id] = updated_history
+    #     # Update member-specific history
+    #     member_histories_msg[member_id] = updated_history
 
-        answer_generated = discord.Embed(
-            title="LumianryAI - answer generation",
-            description=generated_message,
-            color=0x99ccff
-        )
-        await answer.edit(embed=answer_generated)
+    #     answer_generated = discord.Embed(
+    #         title="LumianryAI - answer generation",
+    #         description=generated_message,
+    #         color=0x99ccff
+    #     )
+    #     await answer.edit(embed=answer_generated)
 
 
     elif not any(message.content.startswith(prefix) for prefix in bot.command_prefix):

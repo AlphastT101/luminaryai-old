@@ -296,51 +296,51 @@ def ai(bot, cmd_log_channel_id):
 
 
     ############### ai ##############
-    @bot.command(name='activate')
-    @commands.cooldown(1, 10, commands.BucketType.user)
-    async def start(ctx):
-        # Get or create server-specific data and set AI responses as false
-        server_id = ctx.guild.id
-        if server_id not in server_data_ai:
-            server_data_ai[server_id] = {'response_enabled': False}
-        if server_id not in server_data_aiml:
-            server_data_aiml[server_id] = {'response_enabled': False}
+    # @bot.command(name='activate')
+    # @commands.cooldown(1, 10, commands.BucketType.user)
+    # async def start(ctx):
+    #     # Get or create server-specific data and set AI responses as false
+    #     server_id = ctx.guild.id
+    #     if server_id not in server_data_ai:
+    #         server_data_ai[server_id] = {'response_enabled': False}
+    #     if server_id not in server_data_aiml:
+    #         server_data_aiml[server_id] = {'response_enabled': False}
 
-        # Check if the user is a moderator, administrator, or has a specific role
-        if any(role.permissions.manage_messages for role in ctx.author.roles) or ctx.author.id == 1026388699203772477:
+    #     # Check if the user is a moderator, administrator, or has a specific role
+    #     if any(role.permissions.manage_messages for role in ctx.author.roles) or ctx.author.id == 1026388699203772477:
 
-            if ctx.channel.slowmode_delay >= 10:
-                if server_data_ai[server_id]['response_enabled'] == False and server_data_aiml[server_id]['response_enabled'] == True:
-                    server_data_aiml[server_id]['response_enabled'] = False #set aiml to false
-                    server_data_ai[server_id]['response_enabled'] = True #set ai to true
-                    ai_channels[server_id] = ctx.channel.id  # Store the channel ID
-                    await ctx.send(f'AI enabled & disabled AIML. AI responses will be sent in <#{ctx.channel.id}>.')
+    #         if ctx.channel.slowmode_delay >= 10:
+    #             if server_data_ai[server_id]['response_enabled'] == False and server_data_aiml[server_id]['response_enabled'] == True:
+    #                 server_data_aiml[server_id]['response_enabled'] = False #set aiml to false
+    #                 server_data_ai[server_id]['response_enabled'] = True #set ai to true
+    #                 ai_channels[server_id] = ctx.channel.id  # Store the channel ID
+    #                 await ctx.send(f'AI enabled & disabled AIML. AI responses will be sent in <#{ctx.channel.id}>.')
 
-                elif server_data_ai[server_id]['response_enabled'] == False and server_data_aiml[server_id]['response_enabled'] == False:
-                    # No need to set aiml_channel to false bcz its already false.
-                    server_data_ai[server_id]['response_enabled'] = True #set ai to true
-                    ai_channels[server_id] = ctx.channel.id  # Store the channel ID
-                    await ctx.send(f'AI enabled. AI responses will be sent in <#{ctx.channel.id}>.')
-            else:
-                await ctx.send("Enable 10s slow mode first.")
-        else:
-            await ctx.send("You don't have permission to use this command.")
+    #             elif server_data_ai[server_id]['response_enabled'] == False and server_data_aiml[server_id]['response_enabled'] == False:
+    #                 # No need to set aiml_channel to false bcz its already false.
+    #                 server_data_ai[server_id]['response_enabled'] = True #set ai to true
+    #                 ai_channels[server_id] = ctx.channel.id  # Store the channel ID
+    #                 await ctx.send(f'AI enabled. AI responses will be sent in <#{ctx.channel.id}>.')
+    #         else:
+    #             await ctx.send("Enable 10s slow mode first.")
+    #     else:
+    #         await ctx.send("You don't have permission to use this command.")
 
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used start command in {ctx.guild.name}")
+    #     await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used start command in {ctx.guild.name}")
 
 
-    @bot.command(name='deactivate')
-    @commands.cooldown(1, 10, commands.BucketType.user)
-    async def stop(ctx):
-        server_id = ctx.guild.id
-        # Check if the user is a moderator, administrator, or has a specific role
-        if any(role.permissions.manage_messages for role in ctx.author.roles) or ctx.author.id == 1026388699203772477:
-            server_data_ai[server_id]['response_enabled'] = False
-            await ctx.send("AI disabled.")
-        else:
-            await ctx.send("You don't have permission to use this command.")
+    # @bot.command(name='deactivate')
+    # @commands.cooldown(1, 10, commands.BucketType.user)
+    # async def stop(ctx):
+    #     server_id = ctx.guild.id
+    #     # Check if the user is a moderator, administrator, or has a specific role
+    #     if any(role.permissions.manage_messages for role in ctx.author.roles) or ctx.author.id == 1026388699203772477:
+    #         server_data_ai[server_id]['response_enabled'] = False
+    #         await ctx.send("AI disabled.")
+    #     else:
+    #         await ctx.send("You don't have permission to use this command.")
 
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used stop command in {ctx.guild.name}")
+    #     await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used stop command in {ctx.guild.name}")
 
 
 
@@ -388,7 +388,7 @@ def ai(bot, cmd_log_channel_id):
 
     member_histories = {}  # Dictionary to store conversation history for each member
     @bot.command(name='response')
-    @commands.cooldown(1, 20, commands.BucketType.user)
+    @commands.cooldown(1, 80, commands.BucketType.user)
     async def answer_command(ctx, *, args: str = None):
         if args is None:
             await embed(ctx, "LuminaryAI - answer generation", "Please enter your question.", color=0x99ccff)
@@ -420,7 +420,7 @@ def ai(bot, cmd_log_channel_id):
 
 
     @bot.command(name='imagine')
-    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(1, 50, commands.BucketType.user)
     async def imagine_command(ctx, *, prompt: str = None):
         if prompt is None:
             await embed(ctx, "LuminaryAI - answer generation", "Please enter your prompt", color=0x99ccff)
@@ -455,6 +455,7 @@ def ai(bot, cmd_log_channel_id):
 
 
     @bot.command(name="search")
+    @commands.cooldown(1, 30, commands.BucketType.user)
     async def search(ctx,*, query: str = None):
         if query is None:
             await embed(ctx, "LuminaryAI - answer generation", "Please enter your prompt", color=0x99ccff)
@@ -473,6 +474,7 @@ def ai(bot, cmd_log_channel_id):
         await ctx.reply(embed=web_embed, file=file)
 
     @bot.command(name='imagine.p')
+    @commands.cooldown(1, 40, commands.BucketType.user)
     async def imagine_m2_command(ctx, *, prompt: str = None):
         if prompt is None:
             await ctx.reply("**Please enter your prompt!**", delete_after=3)
@@ -494,6 +496,7 @@ def ai(bot, cmd_log_channel_id):
 
 
     @bot.command(name='prodia')
+    @commands.cooldown(1, 40, commands.BucketType.user)
     async def prodia_command(ctx,*,prompt: str = None):
         if prompt is None:
             await embed(ctx, "LuminaryAI - answer generation", "Please enter your prompt", color=0x99ccff)
@@ -559,6 +562,7 @@ def ai(bot, cmd_log_channel_id):
 
 
     @bot.command(name='searchimg')
+    @commands.cooldown(1, 20, commands.BucketType.user)
     async def searchimg(ctx,* , query):
         a = search_photo(query)
         if a == "Bad":

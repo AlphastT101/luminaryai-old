@@ -6,15 +6,13 @@ from discord.ext import commands
 
 
 
-def bot_slash(bot, cmd_log_channel_id,start_time):
+def bot_slash(bot,start_time):
 
     ##### check #######
     @bot.tree.command(name="status", description="Check bot status")
     @commands.guild_only()
     async def check(interaction: discord.Interaction):
         await interaction.response.send_message("bot is online")
-
-        await bot.get_channel(cmd_log_channel_id).send(f"{interaction.user} used status(slash) command in {interaction.guild.name}")
 
     ##### help #######
     @bot.tree.command(name="help", description="Help/command list")
@@ -45,10 +43,12 @@ def bot_slash(bot, cmd_log_channel_id,start_time):
         embed_ai.add_field(name='`ai.response {prompt}`', value="Generates answers according to user-inputes. Message history available", inline=False)
         embed_ai.add_field(name='`ai.aiml.start`', value="Enable AIML responses, You need a role with manage messages to run this command.", inline=False)
         embed_ai.add_field(name='`ai.aiml.stop`', value="Disable AIML responses, You need a role with manage messages to run this command.", inline=False)
-        embed_ai.add_field(name='`ai.activate`', value="Disable AI responses, You need a role with manage messages to run this command.", inline=False)
-        embed_ai.add_field(name='`ai.deactivate`', value="Disable AI responses, You need a role with manage messages to run this command.", inline=False)
-        embed_ai.add_field(name='`ai.searchimg {prompt}`', value="Disable AI responses, You need a role with manage messages to run this command.", inline=False)
+        embed_ai.add_field(name='`ai.activate` **[DISABLED]**', value="Enable AI responses, You need a role with manage messages to run this command.\nModel: *Luminary*", inline=False)
+        embed_ai.add_field(name='`ai.deactivate` **[DISABLED]**', value=" Disable AI responses, You need a role with manage messages to run this command.", inline=False)
+        embed_ai.add_field(name='`ai.searchimg {prompt}`', value="Search the web for images.", inline=False)
         embed_ai.add_field(name='`@luminaryai {prompt}`', value="Ping LuminaryAI to generate text and images.", inline=False)
+        embed_ai.add_field(name='`@luminaryai activate`', value="Enable AI responses using Luminary-ultra. You need admin permissions to run this command.", inline=False)
+        embed_ai.add_field(name='`@luminaryai deactivate`', value="Disable AI responses using Luminary-ultra. You need admin permissions to run this command..", inline=False)
 
 
 
@@ -144,7 +144,6 @@ def bot_slash(bot, cmd_log_channel_id,start_time):
 
 
     ############## about ##################
-    @commands.guild_only()
     @bot.tree.command(name="about", description="about the bot")
     @commands.guild_only()
     async def about(interaction: discord.Interaction):
@@ -167,5 +166,3 @@ def bot_slash(bot, cmd_log_channel_id,start_time):
         about.set_image(url="attachment://ai.png")
         filename = "ai.png"
         await interaction.response.send_message(embed=about, file=discord.File(filename, filename="ai.png"))
-
-        await bot.get_channel(cmd_log_channel_id).send(f"{interaction.user} used about(slash) command in {interaction.guild.name}")

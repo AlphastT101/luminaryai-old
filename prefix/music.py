@@ -97,7 +97,7 @@ alread_playing = discord.Embed(
 alread_playing.set_thumbnail(url="attachment://thumbnail.png")
 def music(bot):
     @bot.command(name='join')
-    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(1, 20, commands.BucketType.user)
     async def join(ctx):
         if ctx.author.voice is None:
             file = discord.File("music.png", filename="thumbnail.png")
@@ -150,6 +150,7 @@ def music(bot):
     server_loops = {}  # Dictionary to store loop status for each server
 
     @bot.command(name='loop')
+    @commands.cooldown(1, 20, commands.BucketType.user)
     async def toggle_loop(ctx):
         server_id = ctx.guild.id
         if server_id not in server_loops:
@@ -166,7 +167,7 @@ def music(bot):
             await ctx.send(embed=loop_enabled, file=file)
 
     @bot.command(name='play')
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def play(ctx, *, song_name):
         server_id = ctx.guild.id
         if server_id not in server_loops:
@@ -330,7 +331,7 @@ def music(bot):
 
 
     @bot.command(name='leave')
-    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def stop(ctx):
         # Check if the bot is in a voice channel
         if ctx.voice_client is not None:
