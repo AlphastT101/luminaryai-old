@@ -247,7 +247,7 @@ server_data_ai = {}
 ai_channels = {}
 
 
-def ai(bot, cmd_log_channel_id):
+def ai(bot):
 
     ###### aiml #########
     @bot.command(name='aiml.start')
@@ -277,7 +277,6 @@ def ai(bot, cmd_log_channel_id):
         else:
             await ctx.send("You don't have permission to use this command.")
 
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used start command in {ctx.guild.name}")
 
     @bot.command(name='aiml.stop')
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -290,7 +289,6 @@ def ai(bot, cmd_log_channel_id):
         else:
             await ctx.send("You don't have permission to use this command.")
 
-        await ctx.bot.get_channel(cmd_log_channel_id).send(f"{ctx.author} used stop command in {ctx.guild.name}")
 
 
 
@@ -479,6 +477,12 @@ def ai(bot, cmd_log_channel_id):
         if prompt is None:
             await ctx.reply("**Please enter your prompt!**", delete_after=3)
             return
+        generating = discord.Embed(
+            title="LuminaryAI - Image generation",
+            description=f"Generating image...",
+            color=0x99ccff
+        )
+        delete_msg = await ctx.send(embed=generating)
         async with aiohttp.ClientSession() as session:
             try:
                 send_embed = discord.Embed(
@@ -489,6 +493,7 @@ def ai(bot, cmd_log_channel_id):
                 image = await poly_image_gen(session, prompt)
                 file=discord.File(image, 'generated_image.png')
                 send_embed.set_image(url=f'attachment://generated_image.png')
+                await delete_msg.delete()
                 await ctx.reply(embed=send_embed, file=file)
             except Exception as e:
                 print(f"An error occurred: {e}")
@@ -499,7 +504,7 @@ def ai(bot, cmd_log_channel_id):
     @commands.cooldown(1, 40, commands.BucketType.user)
     async def prodia_command(ctx,*,prompt: str = None):
         if prompt is None:
-            await embed(ctx, "LuminaryAI - answer generation", "Please enter your prompt", color=0x99ccff)
+            await ctx.reply("**Invalid command!**", delete_after=3)
             return
         embed_prodia = discord.Embed(
             title="LuminaryAI - Image generation using prodia",
