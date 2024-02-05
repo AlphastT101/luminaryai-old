@@ -136,3 +136,7 @@ def general(bot, developer_members):
 
             # Remove the temporary file after sending
             os.remove(temp_filename)
+
+    @bot.command()
+    async def status(ctx, member: discord.Member):
+        await ctx.send(f"{member.display_name}'s status is {member.status}")
