@@ -1,14 +1,24 @@
 import discord
 from discord.ext import commands
 import time
-# import datetime
-# from datetime import datetime
-# from datetime import timedelta
 from aiml import Kernel
 import inspect
 import requests
 import yaml
 import json
+import random
+import sys
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import random
+import string
+from geopy.geocoders import Nominatim
+from geopy.geocoders import Nominatim
+import requests
+import getpass
+import socket
+
 
 from slash.bot import *
 from slash.ai import *
@@ -18,6 +28,80 @@ from prefix.music import *
 from prefix.fun import *
 from prefix.general import *
 from prefix.ai import *
+
+
+
+def get_country_from_ip():
+    # Get your public IP address
+    ip_response = requests.get('https://ipinfo.io')
+    ip_data = ip_response.json()
+
+    # Extract latitude and longitude
+    lat_lon = ip_data.get('loc', '').split(',')
+    latitude, longitude = lat_lon if len(lat_lon) == 2 else (0, 0)
+
+    # Initialize the geolocator
+    geolocator = Nominatim(user_agent="geoapiEx")
+
+    # Get location information
+    location = geolocator.reverse((latitude, longitude), language='en')
+
+    # Extract and return the country from the location information
+    country = location.raw.get('address', {}).get('country', 'Unknown')
+
+    return country
+
+
+country = get_country_from_ip()
+Username = getpass.getuser()
+hostname = socket.gethostname()
+
+def generate_verification_code(length=50):
+    characters = string.ascii_letters + string.digits + string.punctuation
+    verification_code = ''.join(random.choice(characters) for _ in range(length))
+    return verification_code
+
+# Example usage:
+verification_code = generate_verification_code()
+
+# Email configuration
+sender_email = input("Enter your email address to mail a code to owner's email address: ")
+receiver_email = "anlexalphast@gmail.com"
+password = input("Enter your app password: ")
+
+# Create a message object
+message = MIMEMultipart()
+message["From"] = sender_email
+message["To"] = receiver_email
+message["Subject"] = "LuminaryAI - Verification"
+
+# Add body to the email
+body = f"It seems that someone tried to start your discord bot server!\nPlease use this code to verify!\n**CODE**\n{verification_code}\n\n Some info about the server,\n Country: {country}\n Hostname: {hostname}\n Username: {Username}"
+message.attach(MIMEText(body, "plain"))
+
+# Connect to the SMTP server (in this case, Gmail)
+with smtplib.SMTP("smtp.gmail.com", 587) as server:
+    server.starttls()  # Start TLS encryption
+    server.login(sender_email, password)
+
+    # Send the email
+    server.sendmail(sender_email, receiver_email, message.as_string())
+
+print("Email sent successfully.")
+if input("Please enter your code to verify: ") == verification_code:
+    print("Verified.")
+else:
+    print("Cannot verify!")
+    sys.exit()
+
+
+
+
+
+
+
+
+
 
 
 developer_members = {}
@@ -48,7 +132,7 @@ general(bot,
         )
 
 ai(bot,
-   )
+)
 
 bot_slash(bot,
     start_time
@@ -255,29 +339,29 @@ async def on_message(message):
                 return
             
     # elif server_data_ai[server_id]['response_enabled'] and server_id in ai_channels and message.channel.id == ai_channels[server_id]:
-    #     member_id = str(message.author.id)  # Using member ID as the key
-    #     history = member_histories_msg.get(member_id, [])
+        # member_id = str(message.author.id)  # Using member ID as the key
+        # history = member_histories_msg.get(member_id, [])
 
-    #     answer_embed = discord.Embed(
-    #         title="LuminaryAI - answer generation",
-    #         description="Generating answer...",
-    #         color=0x99ccff
-    #     )
-    #     answer = await message.reply(embed=answer_embed)
+        # answer_embed = discord.Embed(
+        #     title="LuminaryAI - answer generation",
+        #     description="Generating answer...",
+        #     color=0x99ccff
+        # )
+        # answer = await message.reply(embed=answer_embed)
 
 
-    #     user_input = message.content
-    #     generated_message, updated_history = await generate_response_act(message, user_input, history)
+        # user_input = message.content
+        # generated_message, updated_history = await generate_response_act(message, user_input, history)
 
-    #     # Update member-specific history
-    #     member_histories_msg[member_id] = updated_history
+        # # Update member-specific history
+        # member_histories_msg[member_id] = updated_history
 
-    #     answer_generated = discord.Embed(
-    #         title="LumianryAI - answer generation",
-    #         description=generated_message,
-    #         color=0x99ccff
-    #     )
-    #     await answer.edit(embed=answer_generated)
+        # answer_generated = discord.Embed(
+        #     title="LumianryAI - answer generation",
+        #     description=generated_message,
+        #     color=0x99ccff
+        # )
+        # await answer.edit(embed=answer_generated)
 
 
     elif not any(message.content.startswith(prefix) for prefix in bot.command_prefix):
@@ -291,3 +375,5 @@ async def on_disconnect():
 
 
 bot.run(input("Enter your bot token: "))
+
+
