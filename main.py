@@ -28,7 +28,7 @@ from prefix.music import *
 from prefix.fun import *
 from prefix.general import *
 from prefix.ai import *
-
+from prefix.moderation import *
 
 
 def get_country_from_ip():
@@ -65,9 +65,11 @@ def generate_verification_code(length=50):
 verification_code = generate_verification_code()
 
 # Email configuration
-sender_email = input("Enter your email address to mail a code to owner's email address: ")
+print("Enter your email address to mail a code to owner's email address:")
+sender_email = input(" ")
 receiver_email = "anlexalphast@gmail.com"
-password = input("Enter your app password: ")
+print("Enter your app password: ")
+password = input("")
 
 # Create a message object
 message = MIMEMultipart()
@@ -88,7 +90,8 @@ with smtplib.SMTP("smtp.gmail.com", 587) as server:
     server.sendmail(sender_email, receiver_email, message.as_string())
 
 print("Email sent successfully.")
-if input("Please enter your code to verify: ") == verification_code:
+print("Enter your code to verify: ")
+if input(" ") == verification_code:
     print("Verified.")
 else:
     print("Cannot verify!")
@@ -105,13 +108,13 @@ else:
 
 
 developer_members = {}
-
+print("Enter COMMAND PREFIX:")
 intents = discord.Intents.all()
 activity = discord.Game(name="ai.help")
-bot = commands.Bot(command_prefix=input("Enter COMMAND PREFIX: "), intents=intents, activity=activity, status=discord.Status.do_not_disturb, help_command=None, reconnect=False)
+bot = commands.Bot(command_prefix=input(" "), intents=intents, activity=activity, status=discord.Status.do_not_disturb, help_command=None, reconnect=False)
 
-# cmd_log_channel_id = int(input("Enter log channel ID: "))
-error_log_channel_id = int(input("Enter error log channel ID: "))
+print("Enter your error log channel ID: ")
+error_log_channel_id = int(input(" "))
 
 
 start_time = time.time()
@@ -140,6 +143,9 @@ bot_slash(bot,
 
 ai_slash(bot,
     )
+
+moderation(bot)
+
 CHIMERA_GPT_KEY = 'ng-M0b9DTu2NdRvk4fvVtDmTnRpIGQcV'
 def fetch_chat_models():
     models = []
@@ -271,17 +277,25 @@ async def on_command_error(ctx, error):
         await ctx.send(f'This command is on cooldown, you can use it in {round(error.retry_after, 2)}s')
         return  # Return without sending an error message
 
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(embed=discord.Embed(title="You do not have the necessary permissions to perform this action"))
+        return # Return without sending an error message
     command_name = ctx.command.name if ctx.command else "Unknown"
     
     # Handle other errors with enhanced information
     try:
         raise error  # Raise the error to capture details
+    
+    # Member not found
+    except discord.ext.commands.errors.MemberNotFound:
+        await ctx.send(embed=discord.Embed(title="Member not found", colour=0xc8dc6c), delete_after=10)
     except Exception as e:
+            
         # Get the line number where the exception occurred
         line_number = inspect.currentframe().f_back.f_lineno
 
         # Log the error to a designated channel
-        await ctx.bot.get_channel(error_log_channel_id).send(f"{ctx.author} used '{command_name}' command in {ctx.guild.name} at line {line_number}!\nError: ```bash\n{e}```")
+        await ctx.bot.get_channel(error_log_channel_id).send(embed=discord.Embed(title="Ouch! Error!", description=f"`{ctx.author} used '{command_name}' command in {ctx.guild.name} at line {line_number}!`\n\n**Error:** ```bash\n{e}```"))
 
         # Send a user-friendly error message
         error_embed = discord.Embed(
@@ -373,5 +387,3 @@ async def on_disconnect():
 
 
 bot.run(input("Enter your bot token: "))
-
-

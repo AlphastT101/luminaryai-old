@@ -41,14 +41,14 @@ def bbot(bot, developer_members, start_time):
             description="Play RPS with the bot",
             color=0x99ccff
         )
-        rps.add_field(name='Syntax:', value='```ai.rps {your move}```')
+        rps.add_field(name='Syntax:', value='```ai.rps {your move}```',inline=False)
 
         cat = discord.Embed(
             title="Help: ai.cat",
             description="Shows a random cat picture",
             color=0x99ccff
         )
-        cat.add_field(name='Syntax:', value='```ai.cat```')
+        cat.add_field(name='Syntax:', value='```ai.cat```',inline=False)
 
 
         randomfact = discord.Embed(
@@ -56,91 +56,91 @@ def bbot(bot, developer_members, start_time):
             description="shows a randomfact about the world",
             color=0x99ccff
         )
-        randomfact.add_field(name='Syntax:', value='```ai.randomfact```')
+        randomfact.add_field(name='Syntax:', value='```ai.randomfact```',inline=False)
 
         user = discord.Embed(
             title="Help: ai.user",
             description="Shows user ID, username, user avatar. \n user_mention is optional",
             color=0x99ccff
         )
-        user.add_field(name='Syntax:', value='```ai.user {user_mention}```')
+        user.add_field(name='Syntax:', value='```ai.user {user_mention}```',inline=False)
 
         start = discord.Embed(
             title="Help: ai.aiml.start",
             description="Initiate AIML responses by executing the ?start command. The bot will respond when the `?start` command is triggered. Prefix commands won't function while AI responses are active. To deactivate AI responses, use the ?stop command.",
             color=0x99ccff
         )
-        start.add_field(name='Syntax:', value='```ai.start```')
+        start.add_field(name='Syntax:', value='```ai.start```',inline=False)
 
         stop = discord.Embed(
             title="Help: ai.aiml.stop",
             description="Disable AIML responses",
             color=0x99ccff
         )
-        stop.add_field(name='Syntax:', value='```ai.stop```')
+        stop.add_field(name='Syntax:', value='```ai.stop```',inline=False)
 
         imagine = discord.Embed(
             title="Help: ai.imagine",
             description="Generate images!",
             color=0x99ccff
         )
-        imagine.add_field(name='Syntax:', value='```ai.imagine {prompt}```')
-        imagine.add_field(name='Example:', value='```ai.imagine bmw m4```')
+        imagine.add_field(name='Syntax:', value='```ai.imagine {prompt}```',inline=False)
+        imagine.add_field(name='Example:', value='```ai.imagine bmw m4```',inline=False)
 
         imagine_p = discord.Embed(
             title="Help: ai.imagine.p",
             description="Generate images using pollonations.ai",
             color=0x99ccff
         )
-        imagine_p.add_field(name='Syntax:', value='```ai.imagine.p {prompt}```')
-        imagine_p.add_field(name='Example:', value='```ai.imagine.p bmw m4```')
+        imagine_p.add_field(name='Syntax:', value='```ai.imagine.p {prompt}```',inline=False)
+        imagine_p.add_field(name='Example:', value='```ai.imagine.p bmw m4```',inline=False)
 
         search = discord.Embed(
             title="Help: ai.search",
             description="Search the Wiki",
             color=0x99ccff
         )
-        search.add_field(name='Syntax:', value='```ai.search {prompt}```')
-        search.add_field(name='Example:', value='```ai.search what is hydrogen?```')
+        search.add_field(name='Syntax:', value='```ai.search {prompt}```',inline=False)
+        search.add_field(name='Example:', value='```ai.search what is hydrogen?```',inline=False)
 
         searchimg = discord.Embed(
             title="Help: ai.searchimg",
             description="Search the web for images",
             color=0x99ccff
         )
-        searchimg.add_field(name='Syntax:', value='```ai.searchimg {prompt}```')
-        searchimg.add_field(name='Example:', value='```ai.searchimg apple```')
+        searchimg.add_field(name='Syntax:', value='```ai.searchimg {prompt}```',inline=False)
+        searchimg.add_field(name='Example:', value='```ai.searchimg apple```',inline=False)
 
         purge = discord.Embed(
             title="Help: ai.purge",
             description="Purge recent messages. Both you and LuminaryAI need the 'Manage Messages' permission",
             color=0x99ccff
         )
-        purge.add_field(name='Syntax:', value='```ai.purge {number of messages}```')
-        purge.add_field(name='Example:', value='```ai.purge 50```')
+        purge.add_field(name='Syntax:', value='```ai.purge {number of messages}```',inline=False)
+        purge.add_field(name='Example:', value='```ai.purge 50```',inline=False)
 
         ai = discord.Embed(
             title="Help: ai.response",
             description="Generate answers!",
             color=0x99ccff
         )
-        ai.add_field(name='Syntax:', value='```ai.response {prompt}```')
-        ai.add_field(name='Example:', value='```ai.response What is discord.py?```')
+        ai.add_field(name='Syntax:', value='```ai.response {prompt}```',inline=False)
+        ai.add_field(name='Example:', value='```ai.response What is discord.py?```',inline=False)
 
         loop = discord.Embed(
             title="Help: ai.loop",
             description="Loop the current music",
             color=0x99ccff
         )
-        loop.add_field(name='Syntax:', value='```ai.loop```')
+        loop.add_field(name='Syntax:', value='```ai.loop```',inline=False)
 
         play = discord.Embed(
             title="Help: ai.play",
-            description="Play a music from the internet",
+            description="Play a music from the internet, YouTube links are accepted.",
             color=0x99ccff
         )
-        play.add_field(name='Syntax:', value='```ai.play {song name}```')
-        play.add_field(name='Example:', value='```ai.play Cruel summer```')
+        play.add_field(name='Syntax:', value='```ai.play {song name}```',inline=False)
+        play.add_field(name='Example:', value='```ai.play Cruel summer```',inline=False)
 
 
         leave = discord.Embed(
@@ -148,14 +148,14 @@ def bbot(bot, developer_members, start_time):
             description="Stop the playback and leave the voice channel.",
             color=0x99ccff
         )
-        leave.add_field(name='Syntax:', value='```ai.leave```')
+        leave.add_field(name='Syntax:', value='```ai.leave```',inline=False)
 
         join = discord.Embed(
             title="Help: ai.join",
             description="Join your voice channel.",
             color=0x99ccff
         )
-        join.add_field(name='Syntax:', value='```ai.join```')
+        join.add_field(name='Syntax:', value='```ai.join```',inline=False)
     
 
 
@@ -164,16 +164,51 @@ def bbot(bot, developer_members, start_time):
             description="Enable developer mode. This will display a bit more detail in the outputs.",
             color=0x99ccff
         )
-        developer.add_field(name='Syntax:', value='```ai.developer {choice}```')
-        developer.add_field(name='Syntax:', value='```ai.developer true```')
+        developer.add_field(name='Syntax:', value='```ai.developer {choice}```',inline=False)
+        developer.add_field(name='Syntax:', value='```ai.developer true```',inline=False)
 
         uptime = discord.Embed(
             title="Help: ai.uptime",
             description="Shows bot uptime.",
             color=0x99ccff
         )
-        uptime.add_field(name='Syntax:', value='```ai.uptime```')
+        uptime.add_field(name='Syntax:', value='```ai.uptime```',inline=False)
 
+
+        ban = discord.Embed(
+            title="Help: ai.ban",
+            description="Ban a member, you and LuminaryAI needs proper permissions to perform this action (ban members).",
+            color=0x99ccff
+        )
+        ban.add_field(name='Syntax:', value='```ai.ban {member} {reason}```',inline=False)
+        ban.add_field(name='Example:', value='```ai.ban @noob Using self bots```',inline=False)
+
+        unban = discord.Embed(
+            title="Help: ai.unban",
+            description="unban a member, you and LuminaryAI needs proper permissions to perform this action (ban members).",
+            color=0x99ccff
+        )
+        unban.add_field(name='Syntax:', value='```ai.unban {member} {reason}```')
+        unban.add_field(name='Example:', value='```ai.unban @noob Appeal application accepted!```',inline=False)
+
+
+        kick = discord.Embed(
+            title="Help: ai.kick",
+            description="kick a member, you and LuminaryAI needs proper permissions to perform this action (kick members).",
+            color=0x99ccff
+        )
+        kick.add_field(name='Syntax:', value='```ai.kick {member} {reason}```',inline=False)
+        kick.add_field(name='Example:', value='```ai.kick @gamer alt accounts are not allowed```',inline=False)
+
+
+        timeout = discord.Embed(
+            title="Help: ai.timeout",
+            description="timeout a member, you and LuminaryAI needs proper permissions to perform this action (kick members).",
+            color=0x99ccff
+        )
+        timeout.add_field(name='Syntax:', value='```ai.timeout {member} {duration} {reason}```')
+        timeout.add_field(name='Example 1:', value='```ai.timeout @gamer 1d spamming, please dont spam!```',inline=False)
+        timeout.add_field(name='Example 2:', value='```ai.timeout @idiot 10h stop posting images```',inline=False)
         if command_info is None:
             await ctx.send("**Invalid command**", delete_after=3)
         elif command_info.lower() == "rps":
@@ -212,6 +247,14 @@ def bbot(bot, developer_members, start_time):
             await ctx.send(embed=developer)
         elif command_info.lower() == "uptime":
             await ctx.send(embed=uptime)
+        elif command_info.lower() == "ban":
+            await ctx.send(embed=ban)
+        elif command_info.lower() == "unban":
+            await ctx.send(embed=unban)
+        elif command_info.lower() == "timeout":
+            await ctx.send(embed=timeout)
+        elif command_info.lower() == "kick":
+            await ctx.send(embed=kick)
         else:
             await ctx.send("**invalid command**",delete_after=3)
 
@@ -394,7 +437,11 @@ def bbot(bot, developer_members, start_time):
             title="Moderation commands",
             color=0x99ccff  # Convert hex color to integer
         )
-        embed_moderation.add_field(name='`ai.purge`', value="Purge messages, you need proper permissions to use this command.", inline=False)
+        embed_moderation.add_field(name='`ai.purge {number of messages}`', value="Purge messages, you need proper permissions to use this command.", inline=False)
+        embed_moderation.add_field(name='`ai.ban {user} {reason}`', value="Ban a member, you need the ban members permission to take this action.", inline=False)
+        embed_moderation.add_field(name='`ai.unban {user} {reason}`', value="Unban a member.", inline=False)
+        embed_moderation.add_field(name='`ai.kick {user} {reason}`', value="kick a member.", inline=False)
+        embed_moderation.add_field(name='`ai.timeout {user} {duration} {reason}`', value="timeout a member. A valid time duration required.(eg. 1d,10m,5h)", inline=False)
 
 
 
@@ -461,3 +508,14 @@ def bbot(bot, developer_members, start_time):
 
 
         help_select.callback = help_callback
+
+
+
+    @bot.command(name="sync")
+    async def sync(ctx):
+        if ctx.author.id == 1026388699203772477:
+            await ctx.send("**<@1026388699203772477> Syncing slash commands...**")
+            await bot.tree.sync()
+            await ctx.send("**<@1026388699203772477> Slash commands synced!**")
+        else:
+            return

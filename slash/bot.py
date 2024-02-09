@@ -75,6 +75,11 @@ def bot_slash(bot,start_time):
             color=0x99ccff  # Convert hex color to integer
         )
         embed_moderation.add_field(name='`ai.purge`', value="Purge messages, you need proper permissions to use this command.", inline=False)
+        embed_moderation.add_field(name='`ai.purge {number of messages}`', value="Purge messages, you need proper permissions to use this command.", inline=False)
+        embed_moderation.add_field(name='`ai.ban {user} {reason}`', value="Ban a member, you need the ban members permission to take this action.", inline=False)
+        embed_moderation.add_field(name='`ai.unban {user} {reason}`', value="Unban a member.", inline=False)
+        embed_moderation.add_field(name='`ai.kick {user} {reason}`', value="kick a member.", inline=False)
+        embed_moderation.add_field(name='`ai.timeout {user} {duration} {reason}`', value="timeout a member. A valid time duration required.(eg. 1d,10m,5h)", inline=False)
 
 
 
