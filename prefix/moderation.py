@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import asyncio
-from datetime import timedelta, datetime
+from datetime import timedelta
 import re
 
 
@@ -95,7 +95,7 @@ def moderation(bot):
 
 
                 await ctx.send(embed=discord.Embed(title=f"Member {member} has been kicked.\nReason: {reason}",colour=0xc8dc6c), delete_after=10)
-            else:
+            elif str(reaction.emoji) == '❌':
                 await confirm_msg.delete()
                 await ctx.send(embed=discord.Embed(title=f"Action cancelled.", description="`{member}` has not been kicked.",colour=0xc8dc6c), delete_after=10)
 
@@ -156,7 +156,7 @@ def moderation(bot):
 
 
                 await confirm_msg.edit(embed=discord.Embed(title=f"Member {member} has been banned.\nReason: {reason}",colour=0xc8dc6c), delete_after=10)
-            else:
+            elif str(reaction.emoji) == '❌':
                 await confirm_msg.edit(embed=discord.Embed(title=f"Action cancelled.", description="`{member}` has not been banned.",colour=0xc8dc6c), delete_after=10)
 
         except asyncio.TimeoutError:
@@ -203,7 +203,7 @@ def moderation(bot):
                         # Perform the unban
                         await ctx.guild.unban(user, reason=reason)
                         await confirm_message.edit(embed=discord.Embed(title="Member unbanned", description=f"Unbanned member: {user.mention}\n Reason: {reason}", color=0x99ccff))
-                    else:
+                    elif str(reaction.emoji) == '❌':
                         await confirm_message.edit(embed=discord.Embed(title=f"Action cancelled.", description="`{member}` has not been unbanned.",colour=0xc8dc6c, color=0x99ccff), delete_after=10)
                 except discord.Forbidden:
                     await confirm_message.edit(embed=discord.Embed(title="I do not have permission to unban this user.", color=0x99ccff))
@@ -236,7 +236,12 @@ def moderation(bot):
             return
         
         if not ctx.guild.me.guild_permissions.manage_roles:
-            await ctx.send(embed=discord.Embed(title="I don't have the `manage roles` permission to perform this commad!",colour=0xc8dc6c), delete_after=10)
+            await ctx.send(embed=discord.Embed(title="I don't have the `manage roles` permission to perform this commad!",colour=0xc8dc6c))
+            return
+    
+        # Check if the command caller has the required permission
+        if not ctx.author.guild_permissions.manage_roles:
+            await ctx.send(embed=discord.Embed(title="You do not have the necessary permissions to perform this action.",colour=0xc8dc6c))
             return
         
 
@@ -275,11 +280,173 @@ def moderation(bot):
                 # Apply timeout
                 await member.edit(timed_out_until=timeout_until)
                 await confirm_message.edit(embed=discord.Embed(title="Member timed out",description=f"{member.mention} has been timed out for `{duration}`.\nReason: `{reason}`", color=0x99ccff))
-            else:
-                await confirm_message.edit(embed=discord.Embed(title=f"Action cancelled.", description=f"{member} has not been timed out.", color=0x99ccff), delete_after=10)
+            elif str(reaction.emoji) == '❌':
+                await confirm_message.edit(embed=discord.Embed(title=f"Action cancelled.", description=f"{member} has not been timed out.", color=0x99ccff))
             
         except discord.Forbidden:
             await ctx.send(embed=discord.Embed(title="I do not have permission to timeout this user.", color=0x99ccff))
         except discord.HTTPException as e:
             await ctx.send(embed=discord.Embed(title=f"Failed to timeout due to an HTTP error.", color=0x99ccff))
             print(e)
+
+
+
+
+    @bot.command(name="unmute")
+    async def unmute(ctx, member: discord.Member = None, reason: str = "No reason given"):
+        # Check if member is provided
+        if member is None:
+            await ctx.send(embed=discord.Embed(title="Please provide a member to unmute!", color=0x99ccff))
+            return
+
+        # Check if bot has necessary permissions
+        if not ctx.guild.me.guild_permissions.manage_roles:
+            await ctx.send(embed=discord.Embed(title="I don't have the `manage roles` permission", color=0x99ccff))
+            return
+
+        # Check if member is already unmuted
+        if member.timed_out_until is None:
+            await ctx.send(embed=discord.Embed(title="Member is not muted!", color=0x99ccff))
+            return
+
+        # Check if command caller has necessary permissions
+        if not ctx.author.guild_permissions.manage_roles:
+            await ctx.send(embed=discord.Embed(title="You don't have the necessary permissions to perform this command", color=0x99ccff))
+            return
+
+        try:
+            # Ask for confirmation
+            confirm_message = await ctx.send(embed=discord.Embed(title="Confirmation", description=f"{member.mention}, are you sure you want to unmute this member?\nReact with ✅ to confirm.", color=0x99ccff))
+            await confirm_message.add_reaction("✅")
+            await confirm_message.add_reaction('❌')
+
+            def check(reaction, user):
+                return user == ctx.author and str(reaction.emoji) in ['✅', '❌'] and reaction.message.id == confirm_message.id
+
+            reaction, user = await ctx.bot.wait_for('reaction_add', timeout=15.0, check=check)
+
+            if str(reaction.emoji) == '✅':
+                # Apply unmute
+                await member.edit(timed_out_until=None)
+                await confirm_message.edit(embed=discord.Embed(title="Member unmuted", description=f"{member.mention} has been unmuted.\nReason: `{reason}`", color=0x99ccff))
+                return
+            elif str(reaction.emoji) == '❌':
+                await confirm_message.edit(embed=discord.Embed(title="Action cancelled.", description=f"{member} has not been unmuted", color=0x99ccff))
+                return
+
+        except asyncio.TimeoutError:
+            await confirm_message.edit(embed=discord.Embed(title="Confirmation timed out. Command cancelled.", color=0x99ccff))
+        except discord.Forbidden:
+            await confirm_message.edit(embed=discord.Embed(title="I do not have permission to unmute this user.", color=0x99ccff))
+        except discord.HTTPException as e:
+            await confirm_message.edit(embed=discord.Embed(title="Failed to unmute due to an HTTP error.", color=0x99ccff))
+        print(e)
+
+
+
+
+    @bot.command(name='purgelinks', help='Purges messages containing links from the channel.')
+    async def purge_links(ctx, limit: str = None):        
+        if limit is None:
+            await ctx.send(embed=discord.Embed(title="Please provide a number to purge",colour=0xc8dc6c))
+            return
+
+        try:
+            limit = int(limit)
+        except ValueError:
+            await ctx.send(embed=discord.Embed(title="Please provide a valid number to purge",colour=0xc8dc6c))
+            return
+        
+        if not ctx.channel.permissions_for(ctx.channel.guild.me).manage_messages:
+            await ctx.send(embed=discord.Embed(title="I do not have the `manage_messages` permission in this channel.",colour=0xc8dc6c))
+            return
+        if not ctx.author.guild_permissions.manage_messages:
+            await ctx.send(embed=discord.Embed(title="You do not have the nessesarry permission!",colour=0xc8dc6c))
+            return
+
+        def is_link(message):
+            # Simple check, can be replaced with a more advanced regex for detecting links
+            return 'http://' in message.content or 'https://' in message.content
+
+        # Confirmation message
+        confirmation_message = await ctx.send(embed=discord.Embed(title="LuminaryAI - confirmation",description=f"Are you sure you want to delete up to {limit} messages containing links? React with ✅ to confirm.",colour=0xc8dc6c))
+        await confirmation_message.add_reaction("✅")
+        await confirmation_message.add_reaction('❌')
+
+        def check(reaction, user):
+            return user == ctx.message.author and str(reaction.emoji) in ['✅', '❌'] and reaction.message.id == confirmation_message.id
+
+        try:
+            # Wait for confirmation reaction
+            reaction, user = await ctx.bot.wait_for('reaction_add', timeout=15.0, check=check)
+        except asyncio.TimeoutError:
+            await confirmation_message.edit(embed=discord.Embed(title="Purge links command cancelled."))
+            return
+
+        # Perform the purge
+        if str(reaction.emoji) == '✅':
+            try:
+                deleted_messages = await ctx.channel.purge(limit=limit, check=is_link)
+                await confirmation_message.edit(embed=discord.Embed(title=f"Deleted {len(deleted_messages)} messages containing links.",colour=0xc8dc6c))
+            except discord.Forbidden:
+                await confirmation_message.edit(embed=discord.Embed(title="I lack the required permissions to delete messages.",colour=0xc8dc6c))
+            except discord.HTTPException as e:
+                await confirmation_message.edit(embed=discord.Embed(title="Failed to purge messages due to an HTTP error.",colour=0xc8dc6c))
+        elif str(reaction.emoji) == '❌':
+            await confirmation_message.edit(embed=discord.Embed(title="Action cancelled"))
+
+
+
+
+
+
+    @bot.command(name='purgefiles', help='Purges messages containing files/attachments from the channel.')
+    async def purge_files(ctx, limit: str = None):
+        # Check permissions
+        if not ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+            await ctx.send(embed=discord.Embed(title="I don't have the necessary permissions to manage messages in this channel.",colour=0xc8dc6c))
+            return
+        if not ctx.author.guild_permissions.manage_messages:
+            await ctx.send(embed=discord.Embed(title="You don't have the necessary permissions to manage messages in this channel.",colour=0xc8dc6c))
+            return
+        
+        if limit is None:
+            await ctx.send(embed=discord.Embed(title="Please provide a number of messages to delete",colour=0xc8dc6c))
+            return
+        
+        try:
+            limit = int(limit)
+        except ValueError:
+            await ctx.send(embed=discord.Embed(title="Please provide a valid number of messages to delete",colour=0xc8dc6c))
+
+        # Define a function to check if a message contains files or attachments
+        def has_files(message):
+            return len(message.attachments) > 0
+
+        # Confirmation message
+        confirmation_message = await ctx.send(embed=discord.Embed(title="LuminaryAI - confirmation", description=f"Are you sure you want to delete up to {limit} messages containing files/attachments? React with ✅ to confirm.",colour=0xc8dc6c))
+        await confirmation_message.add_reaction("✅")
+        await confirmation_message.add_reaction("❌")
+
+        # Check for reaction
+        def check(reaction, user):
+            return user == ctx.message.author and str(reaction.emoji) in ['✅', '❌'] and reaction.message.id == confirmation_message.id
+
+        try:
+            # Wait for confirmation reaction
+            reaction, user = await bot.wait_for('reaction_add', timeout=15.0, check=check)
+        except asyncio.TimeoutError:
+            await confirmation_message.edit(embed=discord.Embed(title="Purge files command cancelled.",colour=0xc8dc6c))
+            return
+
+        # Perform the purge
+        if str(reaction.emoji) == '✅':
+            try:
+                deleted_messages = await ctx.channel.purge(limit=limit, check=has_files)
+                await confirmation_message.edit(embed=discord.Embed(title=f"Deleted {len(deleted_messages)} messages containing files/attachments.",colour=0xc8dc6c))
+            except discord.Forbidden:
+                await confirmation_message.edit(embed=discord.Embed(title="I lack the required permissions to delete messages.",colour=0xc8dc6c))
+            except discord.HTTPException as e:
+                await confirmation_message.edit(embed=discord.Embed(title=f"Failed to purge messages due to an HTTP error",colour=0xc8dc6c))
+        elif str(reaction.emoji) == '❌':
+            await confirmation_message.edit(embed=discord.Embed(title="Action cancelled.",colour=0xc8dc6c))

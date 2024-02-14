@@ -8,11 +8,7 @@ from bot_utilities.config_loader import load_current_language, config
 import os
 import requests
 import aiohttp
-# from datetime import datetime
-# import re
-# import json
 from urllib.parse import quote
-# import time
 
 
 async def embed(ctx ,title, description, color):

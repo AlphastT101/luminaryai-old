@@ -1,11 +1,9 @@
 import discord
 from discord.ext import commands
-import time
 from aiml import Kernel
 import inspect
 import requests
 import yaml
-import json
 import random
 import sys
 import smtplib
@@ -18,7 +16,8 @@ from geopy.geocoders import Nominatim
 import requests
 import getpass
 import socket
-
+import time
+from datetime import timedelta
 
 from slash.bot import *
 from slash.ai import *
@@ -31,71 +30,71 @@ from prefix.ai import *
 from prefix.moderation import *
 
 
-def get_country_from_ip():
-    # Get your public IP address
-    ip_response = requests.get('https://ipinfo.io')
-    ip_data = ip_response.json()
+# def get_country_from_ip():
+#     # Get your public IP address
+#     ip_response = requests.get('https://ipinfo.io')
+#     ip_data = ip_response.json()
 
-    # Extract latitude and longitude
-    lat_lon = ip_data.get('loc', '').split(',')
-    latitude, longitude = lat_lon if len(lat_lon) == 2 else (0, 0)
+#     # Extract latitude and longitude
+#     lat_lon = ip_data.get('loc', '').split(',')
+#     latitude, longitude = lat_lon if len(lat_lon) == 2 else (0, 0)
 
-    # Initialize the geolocator
-    geolocator = Nominatim(user_agent="geoapiEx")
+#     # Initialize the geolocator
+#     geolocator = Nominatim(user_agent="geoapiEx")
 
-    # Get location information
-    location = geolocator.reverse((latitude, longitude), language='en')
+#     # Get location information
+#     location = geolocator.reverse((latitude, longitude), language='en')
 
-    # Extract and return the country from the location information
-    country = location.raw.get('address', {}).get('country', 'Unknown')
+#     # Extract and return the country from the location information
+#     country = location.raw.get('address', {}).get('country', 'Unknown')
 
-    return country
+#     return country
 
 
-country = get_country_from_ip()
-Username = getpass.getuser()
-hostname = socket.gethostname()
+# country = get_country_from_ip()
+# Username = getpass.getuser()
+# hostname = socket.gethostname()
 
-def generate_verification_code(length=50):
-    characters = string.ascii_letters + string.digits + string.punctuation
-    verification_code = ''.join(random.choice(characters) for _ in range(length))
-    return verification_code
+# def generate_verification_code(length=50):
+#     characters = string.ascii_letters + string.digits + string.punctuation
+#     verification_code = ''.join(random.choice(characters) for _ in range(length))
+#     return verification_code
 
-# Example usage:
-verification_code = generate_verification_code()
+# # Example usage:
+# verification_code = generate_verification_code()
 
-# Email configuration
-print("Enter your email address to mail a code to owner's email address:")
-sender_email = input(" ")
-receiver_email = "anlexalphast@gmail.com"
-print("Enter your app password: ")
-password = input("")
+# # Email configuration
+# print("Enter your email address to mail a code to owner's email address:")
+# sender_email = input(" ")
+# receiver_email = "anlexalphast@gmail.com"
+# print("Enter your app password: ")
+# password = input("")
 
-# Create a message object
-message = MIMEMultipart()
-message["From"] = sender_email
-message["To"] = receiver_email
-message["Subject"] = "LuminaryAI - Verification"
+# # Create a message object
+# message = MIMEMultipart()
+# message["From"] = sender_email
+# message["To"] = receiver_email
+# message["Subject"] = "LuminaryAI - Verification"
 
-# Add body to the email
-body = f"It seems that someone tried to start your discord bot server!\nPlease use this code to verify!\n**CODE**\n{verification_code}\n\n Some info about the server,\n Country: {country}\n Hostname: {hostname}\n Username: {Username}"
-message.attach(MIMEText(body, "plain"))
+# # Add body to the email
+# body = f"It seems that someone tried to start your discord bot server!\nPlease use this code to verify!\n**CODE**\n{verification_code}\n\n Some info about the server,\n Country: {country}\n Hostname: {hostname}\n Username: {Username}"
+# message.attach(MIMEText(body, "plain"))
 
-# Connect to the SMTP server (in this case, Gmail)
-with smtplib.SMTP("smtp.gmail.com", 587) as server:
-    server.starttls()  # Start TLS encryption
-    server.login(sender_email, password)
+# # Connect to the SMTP server (in this case, Gmail)
+# with smtplib.SMTP("smtp.gmail.com", 587) as server:
+#     server.starttls()  # Start TLS encryption
+#     server.login(sender_email, password)
 
-    # Send the email
-    server.sendmail(sender_email, receiver_email, message.as_string())
+#     # Send the email
+#     server.sendmail(sender_email, receiver_email, message.as_string())
 
-print("Email sent successfully.")
-print("Enter your code to verify: ")
-if input(" ") == verification_code:
-    print("Verified.")
-else:
-    print("Cannot verify!")
-    sys.exit()
+# print("Email sent successfully.")
+# print("Enter your code to verify: ")
+# if input(" ") == verification_code:
+#     print("Verified.")
+# else:
+#     print("Cannot verify!")
+#     sys.exit()
 
 
 
@@ -108,13 +107,12 @@ else:
 
 
 developer_members = {}
-print("Enter COMMAND PREFIX:")
 intents = discord.Intents.all()
 activity = discord.Game(name="ai.help")
-bot = commands.Bot(command_prefix=input(" "), intents=intents, activity=activity, status=discord.Status.do_not_disturb, help_command=None, reconnect=False)
+bot = commands.Bot(command_prefix="ai.", intents=intents, activity=activity, status=discord.Status.do_not_disturb, help_command=None, reconnect=False)
 
-print("Enter your error log channel ID: ")
-error_log_channel_id = int(input(" "))
+
+error_log_channel_id = 1191754729592717383
 
 
 start_time = time.time()
@@ -327,6 +325,8 @@ async def cmdd(ctx):
 async def on_message(message):
     if message.author == bot.user or message.author.bot:
         return
+    if message.guild is None:
+        return
     if message.content in cmd_list:
         await bot.process_commands(message)
         return
@@ -385,5 +385,5 @@ async def on_message(message):
 async def on_disconnect():
     return
 
-
-bot.run(input("Enter your bot token: "))
+print("Enter your bot token: ")
+bot.run(input())

@@ -209,6 +209,32 @@ def bbot(bot, developer_members, start_time):
         timeout.add_field(name='Syntax:', value='```ai.timeout {member} {duration} {reason}```')
         timeout.add_field(name='Example 1:', value='```ai.timeout @gamer 1d spamming, please dont spam!```',inline=False)
         timeout.add_field(name='Example 2:', value='```ai.timeout @idiot 10h stop posting images```',inline=False)
+
+
+        purgelinks = discord.Embed(
+            title="Help: ai.purgelinks",
+            description="Purge messages that contains links.",
+            color=0x99ccff
+        )
+        purgelinks.add_field(name='Syntax:', value='```ai.purgelinks {ammount of messages}```')
+        purgelinks.add_field(name='Example:', value='```ai.purgelinks 100```',inline=False)
+
+
+        purgefiles = discord.Embed(
+            title="Help: ai.purgefiles",
+            description="Purge messages that contains files/attachments.",
+            color=0x99ccff
+        )
+        purgefiles.add_field(name='Syntax:', value='```ai.purgefiles {ammount of messages}```')
+        purgefiles.add_field(name='Example:', value='```ai.purgefiles 100```',inline=False)
+
+        unmute = discord.Embed(
+            title="Help: ai.unmute",
+            description="Unmute/remove time out from a member.",
+            color=0x99ccff
+        )
+        unmute.add_field(name='Syntax:', value='```ai.unmute {member} {reason}```')
+        unmute.add_field(name='Example:', value='```ai.unmute @nerd Application accepted!```',inline=False)
         if command_info is None:
             await ctx.send("**Invalid command**", delete_after=3)
         elif command_info.lower() == "rps":
@@ -255,6 +281,12 @@ def bbot(bot, developer_members, start_time):
             await ctx.send(embed=timeout)
         elif command_info.lower() == "kick":
             await ctx.send(embed=kick)
+        elif command_info.lower() == "unmute":
+            await ctx.send(embed=unmute)
+        elif command_info.lower() == "purgefiles":
+            await ctx.send(embed=purgefiles)
+        elif command_info.lower() == "purgelinks":
+            await ctx.send(embed=purgelinks)
         else:
             await ctx.send("**invalid command**",delete_after=3)
 
@@ -441,6 +473,9 @@ def bbot(bot, developer_members, start_time):
         embed_moderation.add_field(name='`ai.ban {user} {reason}`', value="Ban a member, you need the ban members permission to take this action.", inline=False)
         embed_moderation.add_field(name='`ai.unban {user} {reason}`', value="Unban a member.", inline=False)
         embed_moderation.add_field(name='`ai.kick {user} {reason}`', value="kick a member.", inline=False)
+        embed_moderation.add_field(name='`ai.purgefiles {amount of messages}`', value="Purge messages that contains files/attachments.", inline=False)
+        embed_moderation.add_field(name='`ai.purgelinks {amount of messages}`', value="Purge messages that contains links.", inline=False)
+        embed_moderation.add_field(name='`ai.unmute {member} {reason}`', value="Unmute/remove time out from a member.", inline=False)
         embed_moderation.add_field(name='`ai.timeout {user} {duration} {reason}`', value="timeout a member. A valid time duration required.(eg. 1d,10m,5h)", inline=False)
 
 
