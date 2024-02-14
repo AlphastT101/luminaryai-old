@@ -3,6 +3,27 @@ from discord.ext import commands
 from discord.ui import Select, View
 import datetime
 import time
+import psutil
+
+def get_cpu_usage():
+    return psutil.cpu_percent(interval=1)
+
+def get_ram_usage():
+    return psutil.virtual_memory().percent
+
+
+cpu_percent = get_cpu_usage()
+ram_percent = get_ram_usage()
+
+# CPU calculation
+cpu_cores = psutil.cpu_count(logical=False)
+cpu_text = f"{cpu_percent:.0f}% of {cpu_cores} cores"
+
+# RAM calculation
+total_ram_gb = psutil.virtual_memory().total / (1024 ** 3)  # Convert to GB
+ram_text = f"{ram_percent:.0f}% of {total_ram_gb:.0f}GB ({total_ram_gb * ram_percent / 100:.0f}GB)"
+
+
 
 def bbot(bot, developer_members, start_time):
 
@@ -26,6 +47,8 @@ def bbot(bot, developer_members, start_time):
         about.add_field(name='AI engine', value="Luminary", inline=True)
         about.add_field(name='Total guilds', value=f'{len(bot.guilds)}', inline=True)
         about.add_field(name='Members', value=f'{sum(guild.member_count for guild in bot.guilds)}', inline=True)
+        about.add_field(name='RAM usage', value=f"{ram_text}", inline=True)
+        about.add_field(name='CPU usage', value=f"{cpu_text}", inline=True)
         about.set_image(url="attachment://ai.png")
         filename = "ai.png"
         # Send the embed without the file parameter
