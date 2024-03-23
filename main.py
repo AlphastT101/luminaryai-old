@@ -272,4 +272,4 @@ async def on_guild_remove(guild):
     await channel.send(embed=embed)
 
 
-bot.run("MTExMDExMTI1MzI1NjQ4MjgyNg.GE6n0_.FdoDXS_-sDCoNwhb_5fJ9tVDLUlgKZZumDJHMw")
+bot.run()
