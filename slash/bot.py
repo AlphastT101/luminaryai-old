@@ -4,6 +4,7 @@ import datetime
 import time
 from discord.ext import commands
 import psutil
+from data import blacklisted_servers
 
 def get_cpu_usage():
     return psutil.cpu_percent(interval=1)
@@ -30,12 +31,16 @@ def bot_slash(bot,start_time):
     @bot.tree.command(name="status", description="Check bot status")
     @commands.guild_only()
     async def check(interaction: discord.Interaction):
+        if interaction.guild.id in blacklisted_servers:
+            return
         await interaction.response.send_message("bot is online")
 
     ##### help #######
     @bot.tree.command(name="help", description="Help/command list")
     @commands.guild_only()
     async def help(interaction: discord.Interaction):
+        if interaction.guild.id in blacklisted_servers:
+            return
         await interaction.response.defer(ephemeral=False)
         embed_bot = discord.Embed(
             title="Bot related commands",
@@ -59,8 +64,8 @@ def bot_slash(bot,start_time):
         embed_ai.add_field(name='`ai.imagine {prompt}`', value="Generates images using SDXL according to user-inputes. We prefer to use the slash command `/imagine`", inline=False)
         embed_ai.add_field(name='`ai.imagine.p {prompt}`', value="Generates images using pollinations.ai according to user-inputes. We prefer to use the slash command `/imagine`", inline=False)
         embed_ai.add_field(name='`ai.response {prompt}`', value="Generates answers according to user-inputes. Message history available", inline=False)
-        embed_ai.add_field(name='`ai.aiml.start`', value="Enable AIML responses, You need a role with manage messages to run this command.", inline=False)
-        embed_ai.add_field(name='`ai.aiml.stop`', value="Disable AIML responses, You need a role with manage messages to run this command.", inline=False)
+        embed_ai.add_field(name='`ai.aiml.start`**[DISABLED]** ', value="Enable AIML responses, You need a role with manage messages to run this command.", inline=False)
+        embed_ai.add_field(name='`ai.aiml.stop` **[DISABLED]**', value="Disable AIML responses, You need a role with manage messages to run this command.", inline=False)
         embed_ai.add_field(name='`ai.activate` **[DISABLED]**', value="Enable AI responses, You need a role with manage messages to run this command.\nModel: *Luminary*", inline=False)
         embed_ai.add_field(name='`ai.deactivate` **[DISABLED]**', value=" Disable AI responses, You need a role with manage messages to run this command.", inline=False)
         embed_ai.add_field(name='`ai.searchimg {prompt}`', value="Search the web for images.", inline=False)
@@ -145,24 +150,39 @@ def bot_slash(bot,start_time):
             description="[support server](<https://discord.gg/3fRkNa3HR9>)\n[Invite bot](<https://discord.com/oauth2/authorize?client_id=1110111253256482826&permissions=3025808252417&response_type=code&redirect_uri=https%3A%2F%2Fdiscordapp.com%2Foauth2%2Fauthorize%3F%26client_id%3D1110111253256482826%26scope%3Dbot&scope=bot+guilds>)\n\nLuminaryAI is like a smart friend on Discord, using a powerful AI engine called 'Luminary' made by AlphasT101. It's here to help everyone in the Discord group with anything you need.",
             color=0x99ccff  # Convert hex color to integer
         )
-        await interaction.followup.send(embed=help_embbed, view=help_view)
+        help_msg = await interaction.followup.send(embed=help_embbed, view=help_view)
         async def help_callback(interaction):
             if help_select.values[0] == "Bot related":
-                await interaction.response.send_message(embed=embed_bot)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_bot, view=help_view)
+
             elif help_select.values[0] == "AI":
-                await interaction.response.send_message(embed=embed_ai)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_ai, view=help_view)
+
             elif help_select.values[0] == "General":
-                await interaction.response.send_message(embed=embed_general)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_general, view=help_view)
+
             elif help_select.values[0] == "Fun":
-                await interaction.response.send_message(embed=embed_fun)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_fun, view=help_view)
+
             elif help_select.values[0] == "Moderation":
-                await interaction.response.send_message(embed=embed_moderation)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_moderation, view=help_view)
+
             elif help_select.values[0] == "Automod":
-                await interaction.response.send_message(embed=embed_automod)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_automod, view=help_view)
+
             elif help_select.values[0] == "Admin":
-                await interaction.response.send_message(embed=embed_admin)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_admin, view=help_view)
+
             elif help_select.values[0] == "Music":
-                await interaction.response.send_message(embed=embed_music)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_music, view=help_view)
 
 
         help_select.callback = help_callback
@@ -172,6 +192,8 @@ def bot_slash(bot,start_time):
     @bot.tree.command(name="about", description="about the bot")
     @commands.guild_only()
     async def about(interaction: discord.Interaction):
+        if interaction.guild.id in blacklisted_servers:
+            return
         current_time = time.time()
         difference = int(round(current_time - start_time))
         uptime_duration = datetime.timedelta(seconds=difference)

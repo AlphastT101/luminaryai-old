@@ -1,10 +1,11 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-from bot_utilities.ai_utils import generate_response, generate_image_prodia, search, poly_image_gen, generate_gpt4_response, dall_e_gen, sdxl
+from bot_utilities.ai_utils import generate_image_prodia
 import random
 from model_enum import Model
 import asyncio
+from data import blacklisted_servers
 blacklisted_words = [
     "naked",
     "porn",
@@ -63,6 +64,8 @@ def ai_slash(bot):
     )
     @commands.guild_only()
     async def imagine(interaction:discord.Interaction, prompt: str, model: app_commands.Choice[str], sampler: app_commands.Choice[str], seed: int = None):
+        if interaction.guild.id in blacklisted_servers:
+            return
         for word in prompt.split():
             is_nsfw = word in blacklisted_words
         if is_nsfw:

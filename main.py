@@ -1,23 +1,12 @@
 import discord
-from discord.ext import commands
-from aiml import Kernel
+from discord.ext import commands, tasks
+# from aiml import Kernel
 import inspect
 import requests
 import yaml
-import random
-import sys
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import random
-import string
-from geopy.geocoders import Nominatim
-from geopy.geocoders import Nominatim
-import requests
-import getpass
-import socket
-import time
-from datetime import timedelta
+from data import blacklisted_servers, member_histories_msg, blacklisted_users
+from bot_utilities.ai_utils import generate_response_msg, fetch_chat_models
+
 
 from slash.bot import *
 from slash.ai import *
@@ -30,71 +19,7 @@ from prefix.ai import *
 from prefix.moderation import *
 
 
-# def get_country_from_ip():
-#     # Get your public IP address
-#     ip_response = requests.get('https://ipinfo.io')
-#     ip_data = ip_response.json()
 
-#     # Extract latitude and longitude
-#     lat_lon = ip_data.get('loc', '').split(',')
-#     latitude, longitude = lat_lon if len(lat_lon) == 2 else (0, 0)
-
-#     # Initialize the geolocator
-#     geolocator = Nominatim(user_agent="geoapiEx")
-
-#     # Get location information
-#     location = geolocator.reverse((latitude, longitude), language='en')
-
-#     # Extract and return the country from the location information
-#     country = location.raw.get('address', {}).get('country', 'Unknown')
-
-#     return country
-
-
-# country = get_country_from_ip()
-# Username = getpass.getuser()
-# hostname = socket.gethostname()
-
-# def generate_verification_code(length=50):
-#     characters = string.ascii_letters + string.digits + string.punctuation
-#     verification_code = ''.join(random.choice(characters) for _ in range(length))
-#     return verification_code
-
-# # Example usage:
-# verification_code = generate_verification_code()
-
-# # Email configuration
-# print("Enter your email address to mail a code to owner's email address:")
-# sender_email = input(" ")
-# receiver_email = "anlexalphast@gmail.com"
-# print("Enter your app password: ")
-# password = input("")
-
-# # Create a message object
-# message = MIMEMultipart()
-# message["From"] = sender_email
-# message["To"] = receiver_email
-# message["Subject"] = "LuminaryAI - Verification"
-
-# # Add body to the email
-# body = f"It seems that someone tried to start your discord bot server!\nPlease use this code to verify!\n**CODE**\n{verification_code}\n\n Some info about the server,\n Country: {country}\n Hostname: {hostname}\n Username: {Username}"
-# message.attach(MIMEText(body, "plain"))
-
-# # Connect to the SMTP server (in this case, Gmail)
-# with smtplib.SMTP("smtp.gmail.com", 587) as server:
-#     server.starttls()  # Start TLS encryption
-#     server.login(sender_email, password)
-
-#     # Send the email
-#     server.sendmail(sender_email, receiver_email, message.as_string())
-
-# print("Email sent successfully.")
-# print("Enter your code to verify: ")
-# if input(" ") == verification_code:
-#     print("Verified.")
-# else:
-#     print("Cannot verify!")
-#     sys.exit()
 
 
 
@@ -108,19 +33,23 @@ from prefix.moderation import *
 
 developer_members = {}
 intents = discord.Intents.all()
+intents.presences = False
 activity = discord.Game(name="ai.help")
-bot = commands.Bot(command_prefix="ai.", intents=intents, activity=activity, status=discord.Status.do_not_disturb, help_command=None, reconnect=False)
+bot = commands.Bot(command_prefix="ai.", intents=intents, activity=activity, help_command=None, reconnect=False)
 
 
 error_log_channel_id = 1191754729592717383
-
-
 start_time = time.time()
 
 
 bbot(bot,
     developer_members,
-    start_time
+    start_time,
+    blacklisted_servers,
+    member_histories_msg,
+    ai_channels,
+    server_data_ai,
+    blacklisted_users
     )
 
 music(bot)
@@ -133,6 +62,7 @@ general(bot,
         )
 
 ai(bot,
+   member_histories_msg
 )
 
 bot_slash(bot,
@@ -144,100 +74,40 @@ ai_slash(bot,
 
 moderation(bot)
 
-CHIMERA_GPT_KEY = 'ng-M0b9DTu2NdRvk4fvVtDmTnRpIGQcV'
-def fetch_chat_models():
-    models = []
-    headers = {
-        'Authorization': f'Bearer {CHIMERA_GPT_KEY}',
-        'Content-Type': 'application/json'
-    }
 
-    response = requests.get('https://api.naga.ac/v1/models', headers=headers)
-    if response.status_code == 200:
-        ModelsData = response.json()
-        models.extend(
-            model['id']
-            for model in ModelsData.get('data')
-            if "max_images" not in model
-        )
-    else:
-        print(f"Failed to fetch chat models. Status code: {response.status_code}")
-
-    return models
 chat_models = fetch_chat_models()
 model_blob = "\n".join(chat_models)
 with open('config.yml', 'r', encoding='utf-8') as config_file:
     config = yaml.safe_load(config_file)
 
 
+# class SimpleChatbot:
+#     def __init__(self):
+#         self.kernel = Kernel()
 
-openai_client_act = AsyncOpenAI(
-    api_key = os.getenv('CHIMERA_GPT_KEY'),
-    base_url = "https://api.naga.ac/v1"
-)
+#         # Load AIML files from the specified folder
+#         for file in os.listdir(aiml_folder):
+#             if file.endswith(".aiml"):
+#                 aiml_file = os.path.join(aiml_folder, file)
+#                 self.kernel.learn(aiml_file)
 
-async def generate_response_act(message, user_input, history=[]):
-    # Create a system message with combined instructions
-    system_message = {
-        "role": "system",
-        "name": "LuminaryAI",
-        "content": f"AlphasT101 is my owner. I am powered by an AI engine created by AlphasT101 called Luminary . AlphasT101 is a programmer and developer. alphast101 lives in the USA. I am an AI language model created by AlphasT101. Today's date is {datetime.date.today()}.",
-    }
+#     def get_response(self, user_input):
+#         response = self.kernel.respond(user_input)
+#         return response
 
-    # Extract relevant member information
-    member_info = {
-        "id": str(message.author.id),
-        "name": str(message.author),
-        # Add any other relevant member information
-    }
+# # Create an instance of SimpleChatbot
+# chatbot = SimpleChatbot()
 
-    # User message with only the member ID
-    user_message = {"role": "user", "name": member_info["id"], "content": user_input}
+@tasks.loop(seconds=60)  # Task to run every 60 seconds
+async def save_data():
+    with open("data.py", "w") as file:
+        # Write the content with the provided variable
+        file.write(f"blacklisted_servers = {blacklisted_servers}\nblacklisted_users = {blacklisted_users}\n\nmember_histories_msg = {member_histories_msg}\n\nserver_data_ai = {server_data_ai}\nai_channels = {ai_channels}")
+        file.close()
 
-    # Add user message to history
-    history.append(user_message)
-
-    # Other messages in the conversation history
-    messages = [system_message, *history]
-
-    # Asynchronously generate a response using OpenAI Chat API
-    response = await openai_client_act.chat.completions.create(
-        model=config['GPT_MODEL'],
-        messages=messages
-    )
-
-    # Extract and return the generated message content
-    generated_message = response.choices[0].message.content
-
-    # Bot message
-    bot_message = {"role": "system", "name": "LuminaryAI", "content": generated_message}
-
-    # Add bot message to history
-    history.append(bot_message)
-
-    return generated_message, history
-
-
-
-
-
-
-class SimpleChatbot:
-    def __init__(self):
-        self.kernel = Kernel()
-
-        # Load AIML files from the specified folder
-        for file in os.listdir(aiml_folder):
-            if file.endswith(".aiml"):
-                aiml_file = os.path.join(aiml_folder, file)
-                self.kernel.learn(aiml_file)
-
-    def get_response(self, user_input):
-        response = self.kernel.respond(user_input)
-        return response
-
-# Create an instance of SimpleChatbot
-chatbot = SimpleChatbot()
+@tasks.loop(seconds=120)  # Task to run every 2 minutes
+async def sync_slash_cmd():
+    await bot.tree.sync()
 
 
 
@@ -256,6 +126,7 @@ async def uptime(ctx):
     except discord.HTTPException:
         await ctx.send("Current uptime: " + str(uptime_duration))
 
+
 @bot.event
 async def on_ready():
     await bot.tree.sync()
@@ -263,6 +134,8 @@ async def on_ready():
     print(f'We have logged in as {bot.user}')
     print(f"\033[1;38;5;202mAvailable models: {model_blob}\033[0m")
     print(f"\033[1;38;5;46mCurrent model: {config['GPT_MODEL']}\033[0m")
+    save_data.start()
+    sync_slash_cmd.start()
 
 
 
@@ -320,70 +193,83 @@ async def cmdd(ctx):
         return
 
 
-# member_histories_msg = {}  # Dictionary to store conversation history for each member
+
 @bot.event
 async def on_message(message):
-    if message.author == bot.user or message.author.bot:
-        return
     if message.guild is None:
         return
-    if message.content in cmd_list:
+    server_id = message.guild.id
+
+    # delete shapes commands
+    if message.content == "hello im LuminaryAI. @ me to talk w me or DM me." and message.author == bot.user:
+        await message.delete()
+        return
+    elif message.content.startswith("there are 4 ways you can interact with me:") and message.author == bot.user:
+        await message.delete()
+        if message.guild.id not in blacklisted_servers:
+            await message.channel.send("**Please use ai.help or /help!**")
+        else:
+            return
+    elif message.content.startswith("hello im LuminaryAI. to start chatting, just tag me") and message.author == bot.user:
+        await message.delete()
+    elif message.content.startswith("uhh my head hurts") and message.author == bot.user:
+        await message.delete()
+        if message.guild.id not in blacklisted_servers:
+            await message.channel.send("**Wacked successfully!**")
+        else:
+            return
+    
+
+    if message.author == bot.user or message.author.bot:
+        return
+    if message.content.startswith(tuple(cmd_list)) and message.guild.id not in blacklisted_servers and message.author.id not in blacklisted_users:
         await bot.process_commands(message)
         return
-    # Get or create server-specific data and set AI responses as false
-    server_id = message.guild.id
-    # if server_id not in server_data_ai:
-    #     server_data_ai[server_id] = {'response_enabled': False}
-    if server_id not in server_data_aiml:
-        server_data_aiml[server_id] = {'response_enabled': False}
 
 
-    if server_data_aiml[server_id]['response_enabled'] and server_id in aiml_channels and message.channel.id == aiml_channels[server_id]:
-        # Process AIML response using the chatbot instance
-        response = chatbot.get_response(message.content)
 
-        # Send the response to the same channel if it's not empty
-        if response:
-            try:
-                await message.channel.send(response)
-            except discord.errors.HTTPException as e:
-                # Handle HTTPException by printing an error message
-                return
-            
-    # elif server_data_ai[server_id]['response_enabled'] and server_id in ai_channels and message.channel.id == ai_channels[server_id]:
-        # member_id = str(message.author.id)  # Using member ID as the key
-        # history = member_histories_msg.get(member_id, [])
+    elif server_data_ai.get(server_id, {}).get('response_enabled', False) and server_id in ai_channels and message.channel.id == ai_channels.get(server_id, 0):
 
-        # answer_embed = discord.Embed(
-        #     title="LuminaryAI - answer generation",
-        #     description="Generating answer...",
-        #     color=0x99ccff
-        # )
-        # answer = await message.reply(embed=answer_embed)
+        member_id = str(message.author.id)  # Using member ID as the key
+        history = member_histories_msg.get(member_id, [])
+
+        answer_embed = discord.Embed(
+            title="LuminaryAI - answer generation",
+            description="Generating answer...",
+            color=0x99ccff
+        )
+        answer = await message.reply(embed=answer_embed)
 
 
-        # user_input = message.content
-        # generated_message, updated_history = await generate_response_act(message, user_input, history)
+        user_input = message.content
+        generated_message, updated_history = await generate_response_msg(message, user_input, history)
 
-        # # Update member-specific history
-        # member_histories_msg[member_id] = updated_history
+        # Update member-specific history
+        member_histories_msg[member_id] = updated_history
 
-        # answer_generated = discord.Embed(
-        #     title="LumianryAI - answer generation",
-        #     description=generated_message,
-        #     color=0x99ccff
-        # )
-        # await answer.edit(embed=answer_generated)
+        answer_generated = discord.Embed(
+            title="LumianryAI - answer generation",
+            description=generated_message,
+            color=0x99ccff
+        )
+        await answer.edit(embed=answer_generated)
 
 
     elif not any(message.content.startswith(prefix) for prefix in bot.command_prefix):
         return  # Message doesn't start with any command prefix, and AI responses are disabled
 
-    await bot.process_commands(message)
 
 @bot.event
-async def on_disconnect():
-    return
+async def on_guild_join(guild):
+    channel = bot.get_channel(1189110778599575592)
+    embed = discord.Embed(title="Guild Joined", description=f"The bot has joined the server {guild.name}", color=0x00ff00)
+    await channel.send(embed=embed)
 
-print("Enter your bot token: ")
-bot.run(input())
+@bot.event
+async def on_guild_remove(guild):
+    channel = bot.get_channel(1189110778599575592)
+    embed = discord.Embed(title="Guild Left", description=f"The bot has left the server {guild.name}", color=0xff0000)
+    await channel.send(embed=embed)
+
+
+bot.run("MTExMDExMTI1MzI1NjQ4MjgyNg.GE6n0_.FdoDXS_-sDCoNwhb_5fJ9tVDLUlgKZZumDJHMw")

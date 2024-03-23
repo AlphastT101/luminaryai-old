@@ -1,0 +1,7 @@
+blacklisted_servers = [1218905048776446032, 1221058926192365599, 1221082379649810483, 1214985020037668914]
+blacklisted_users = [1217616965355442306, 1066707409206267914, 637281836048842757, 560493409111113748, 953719157386539039, 1212891311481561109]
+
+member_histories_msg = {'1026388699203772477': [{'role': 'user', 'name': '1026388699203772477', 'content': 'Hi'}, {'role': 'system', 'name': 'LuminaryAI', 'content': 'Hello! How can I assist you today?'}, {'role': 'user', 'name': '1026388699203772477', 'content': "What's the date today?"}, {'role': 'system', 'name': 'LuminaryAI', 'content': "Today's date is March 23, 2024. How can I help you further today?"}, {'role': 'user', 'name': '1026388699203772477', 'content': "You're great!"}, {'role': 'system', 'name': 'LuminaryAI', 'content': "Thank you! I'm here to help. If you have any questions or need assistance with anything else, feel free to ask."}, {'role': 'user', 'name': 'alphast101', 'content': 'my real name is Wasee!'}]}
+
+server_data_ai = {1003940162046263347: {'response_enabled': False}}
+ai_channels = {1003940162046263347: 1183271465177600081}

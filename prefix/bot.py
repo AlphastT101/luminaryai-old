@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ui import Select, View
 import datetime
 import time
@@ -25,7 +25,182 @@ ram_text = f"{ram_percent:.0f}% of {total_ram_gb:.0f}GB ({total_ram_gb * ram_per
 
 
 
-def bbot(bot, developer_members, start_time):
+def bbot(bot, developer_members, start_time, blacklisted_servers, member_histories_msg, ai_channels, server_data_ai, blacklisted_users):
+
+    ####### return message ######
+    @bot.command(name="m", aliases=['!m', '/m'])
+    async def m(ctx, *, message):
+        allowed = [1026388699203772477, 885977942776246293, 973461136680845382]
+        if ctx.author.id in allowed:
+            bot_member = ctx.guild.me
+            if bot_member.guild_permissions.manage_messages:
+                await ctx.message.delete()
+                await ctx.send(message)
+            else:
+                await ctx.send(message)
+        else:
+            await ctx.send("**This command is restricted**", delete_after=3)
+
+    @bot.command(name="mp")
+    async def mp(ctx,*,message):
+        if ctx.author.id == 1026388699203772477:
+            print(message)
+            await ctx.message.delete()
+            await ctx.send(message)
+        else:
+            await ctx.send("**This command is restricted**", delete_after=3)
+
+    @bot.command(name="serverinv")
+    async def list_serversinv(ctx):
+        if ctx.author.id == 1026388699203772477:
+            servers = bot.guilds
+
+            if not servers:
+                await ctx.send("The bot is not a member of any servers.")
+                return
+
+            embed = discord.Embed(
+                title="Server List",
+                color=0x99ccff
+            )
+
+            for server in servers:
+                try:
+                    invite = await server.text_channels[0].create_invite()
+                    embed.add_field(name=server.name, value=f"Invite: {invite}", inline=False)
+                except discord.errors.Forbidden:
+                    embed.add_field(name=server.name, value="Unable to create invite (missing permissions)", inline=False)
+
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("**This command is restricted**", delete_after=3)
+
+
+    @bot.command(name="sync")
+    async def sync(ctx):
+        if ctx.author.id == 1026388699203772477:
+            await ctx.send("**<@1026388699203772477> Syncing slash commands...**")
+            await bot.tree.sync()
+            await ctx.send("**<@1026388699203772477> Slash commands synced!**")
+        else:
+            return
+
+    @bot.command(name="blacklist.server")
+    async def blacklistuser(ctx, *, serverid):
+        guild = bot.get_guild(int(serverid))  # Convert serverid to integer
+
+        if ctx.author.id == 1026388699203772477:
+            if guild:  # Check if guild is found
+                if int(serverid) not in blacklisted_servers:
+                    blacklisted_servers.append(int(serverid))
+                    await ctx.send(f"**`{guild.name}` has been blacklisted!**")
+                else:
+                    await ctx.send("**This server is already blacklisted!**")
+            else:
+                await ctx.send("**Guild not found!**")
+        else:
+            return
+
+    @bot.command(name="unblacklist.server")
+    async def blacklistuser(ctx, *, serverid):
+        guild = bot.get_guild(int(serverid))  # Convert serverid to integer
+
+        if ctx.author.id == 1026388699203772477:
+            if guild:  # Check if guild is found
+                if int(serverid) in blacklisted_servers:
+                    blacklisted_servers.remove(int(serverid))
+                    await ctx.send(f"**`{guild.name}` has been unblacklisted!**")
+                else:
+                    await ctx.send("**This server is not blacklisted!**")
+            else:
+                await ctx.send("**Guild not found!**")
+        else:
+            return
+
+
+    @bot.command(name="blacklist.user")
+    async def blacklistuser(ctx, *, userid):
+        user = bot.get_user(int(userid))  # Convert userid to integer
+
+        if ctx.author.id == 1026388699203772477:
+            if user:  # Check if guild is found
+                if int(userid) not in blacklisted_users:
+                    blacklisted_users.append(int(userid))
+                    await ctx.send(f"**`{user.name}` has been blacklisted!**")
+                else:
+                    await ctx.send("**This user is already blacklisted!**")
+            else:
+                await ctx.send("**user not found!**")
+        else:
+            return
+    @bot.command(name="unblacklist.user")
+    async def blacklistuser(ctx, *, userid):
+        user = bot.get_user(int(userid))  # Convert userid to integer
+
+        if ctx.author.id == 1026388699203772477:
+            if user:  # Check if guild is found
+                if int(userid) in blacklisted_users:
+                    blacklisted_users.remove(int(userid))
+                    await ctx.send(f"**`{user.name}` has been unblacklisted!**")
+                else:
+                    await ctx.send("**This user is not blacklisted!**")
+            else:
+                await ctx.send("**user not found!**")
+        else:
+            return
+
+    @bot.command(name="save")
+    async def save(ctx):
+        if ctx.author.id == 1026388699203772477:
+            # Open the "data.py" file in write mode
+
+            with open("data.py", "w") as file:
+                # Write the content with the provided variable
+                file.write(f"blacklisted_servers = {blacklisted_servers}\nblacklisted_users = {blacklisted_users}\n\nmember_histories_msg = {member_histories_msg}\n\nserver_data_ai = {server_data_ai}\nai_channels = {ai_channels}")
+                file.close()
+            await ctx.send("**Data saved successfully!**")
+        else:
+            return
+        
+    @bot.command(name="developer")
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    async def developer(ctx, choice: str):
+        # Check if developer mode is enabled for the user
+        developer_mode = ctx.author.id in developer_members and developer_members[ctx.author.id]
+
+        if choice.lower() == "true":
+            developer_members[ctx.author.id] = True
+            await ctx.send(f"Developer mode enabled for {ctx.author}")
+        elif choice.lower() == "false":
+            developer_members[ctx.author.id] = False
+            await ctx.send(f"Developer mode disabled for {ctx.author}")
+        else:
+            await ctx.send("Invalid choice.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ############### About ########################
     @bot.command(name='about', aliases=["!about", "/about"])
@@ -87,20 +262,6 @@ def bbot(bot, developer_members, start_time):
             color=0x99ccff
         )
         user.add_field(name='Syntax:', value='```ai.user {user_mention}```',inline=False)
-
-        start = discord.Embed(
-            title="Help: ai.aiml.start",
-            description="Initiate AIML responses by executing the ?start command. The bot will respond when the `?start` command is triggered. Prefix commands won't function while AI responses are active. To deactivate AI responses, use the ?stop command.",
-            color=0x99ccff
-        )
-        start.add_field(name='Syntax:', value='```ai.start```',inline=False)
-
-        stop = discord.Embed(
-            title="Help: ai.aiml.stop",
-            description="Disable AIML responses",
-            color=0x99ccff
-        )
-        stop.add_field(name='Syntax:', value='```ai.stop```',inline=False)
 
         imagine = discord.Embed(
             title="Help: ai.imagine",
@@ -226,7 +387,7 @@ def bbot(bot, developer_members, start_time):
 
         timeout = discord.Embed(
             title="Help: ai.timeout",
-            description="timeout a member, you and LuminaryAI needs proper permissions to perform this action (kick members).",
+            description="timeout a member, you and LuminaryAI needs proper permissions to perform this action.",
             color=0x99ccff
         )
         timeout.add_field(name='Syntax:', value='```ai.timeout {member} {duration} {reason}```')
@@ -253,11 +414,34 @@ def bbot(bot, developer_members, start_time):
 
         unmute = discord.Embed(
             title="Help: ai.unmute",
-            description="Unmute/remove time out from a member.",
+            description="Unmute/remove timeout from a member.",
             color=0x99ccff
         )
         unmute.add_field(name='Syntax:', value='```ai.unmute {member} {reason}```')
         unmute.add_field(name='Example:', value='```ai.unmute @nerd Application accepted!```',inline=False)
+
+        resume = discord.Embed(
+            title="Help: ai.resume",
+            description="Resume the playback.",
+            color=0x99ccff
+        )
+
+        stop = discord.Embed(
+            title="Help: ai.stop",
+            description="stop the playback.",
+            color=0x99ccff
+        )
+
+        pause = discord.Embed(
+            title="Help: ai.pause",
+            description="pause the playback.",
+            color=0x99ccff
+        )
+        volume = discord.Embed(
+            title="Help: ai.volume",
+            description="Increase or decrease the volume of the playback.",
+            color=0x99ccff
+        )
         if command_info is None:
             await ctx.send("**Invalid command**", delete_after=3)
         elif command_info.lower() == "rps":
@@ -266,10 +450,6 @@ def bbot(bot, developer_members, start_time):
             await ctx.send(embed=cat)
         elif command_info.lower() == "randomfact":
             await ctx.send(embed=randomfact)
-        elif command_info.lower() == "aiml.start":
-            await ctx.send(embed=start)
-        elif command_info.lower() == "aiml.stop":
-            await ctx.send(embed=stop)
         elif command_info.lower() == "user":
             await ctx.send(embed=user)
         elif command_info.lower() == "imagine":
@@ -310,128 +490,18 @@ def bbot(bot, developer_members, start_time):
             await ctx.send(embed=purgefiles)
         elif command_info.lower() == "purgelinks":
             await ctx.send(embed=purgelinks)
+        elif command_info.lower() == "resume":
+            await ctx.send(embed=resume)
+        elif command_info.lower() == "stop":
+            await ctx.send(embed=stop)
+        elif command_info.lower() == "pause":
+            await ctx.send(embed=pause)
+        elif command_info.lower() == "volume":
+            await ctx.send(embed=volume)
         else:
             await ctx.send("**invalid command**",delete_after=3)
 
-
-
-    ####### return message ######
-    @bot.command(name="m", aliases=['!m', '/m'])
-    async def m(ctx, *, message):
-        allowed = [1026388699203772477, 885977942776246293, 973461136680845382]
-        if ctx.author.id in allowed:
-            bot_member = ctx.guild.me
-            if bot_member.guild_permissions.manage_messages:
-                await ctx.message.delete()
-                await ctx.send(message)
-            else:
-                await ctx.send(message)
-        else:
-            await ctx.send("**This command is restricted**", delete_after=3)
-
-
-
-
-    @bot.command(name="mp")
-    async def mp(ctx,*,message):
-        if ctx.author.id == 1026388699203772477:
-            print(message)
-            await ctx.message.delete()
-            await ctx.send(message)
-        else:
-            await ctx.send("**This command is restricted**", delete_after=3)
-
-
-
-    @bot.command(name="serverinv")
-    async def list_serversinv(ctx):
-        if ctx.author.id == 1026388699203772477:
-            servers = bot.guilds
-
-            if not servers:
-                await ctx.send("The bot is not a member of any servers.")
-                return
-
-            embed = discord.Embed(
-                title="Server List",
-                color=0x99ccff
-            )
-
-            for server in servers:
-                try:
-                    invite = await server.text_channels[0].create_invite()
-                    embed.add_field(name=server.name, value=f"Invite: {invite}", inline=False)
-                except discord.errors.Forbidden:
-                    embed.add_field(name=server.name, value="Unable to create invite (missing permissions)", inline=False)
-
-            await ctx.send(embed=embed)
-        else:
-            await ctx.send("**This command is restricted**", delete_after=3)
-
-
-
-
-    @bot.command(name="server")
-    async def list_servers(ctx):
-        if ctx.author.id == 1026388699203772477:
-            servers = bot.guilds
-
-            if not servers:
-                await ctx.send("The bot is not a member of any servers.")
-                return
-
-            server_names = [server.name for server in servers]
-            server_list = "\n".join(server_names)
-
-            embed = discord.Embed(
-                title="Server List",
-                description=server_list,
-                color=0x99ccff
-            )
-            await ctx.send(embed=embed)
-        else:
-            await ctx.send("**This command is restricted**", delete_after=3)
-
-
-    @bot.command(name="servermem")
-    async def list_server_members(ctx, *, server_name: str):
-        if ctx.author.id == 1026388699203772477:
-            server = discord.utils.get(bot.guilds, name=server_name)
-
-            if server is None:
-                await ctx.send(f"Bot is not a member of a server named {server_name}.")
-                return
-
-            members = [member.name for member in server.members]
-
-            if not members:
-                await ctx.send(f"No members found in the server named {server_name}.")
-                return
-
-            members_list = "\n".join(members)
-            await ctx.send(f"Members of {server_name}:\n```{members_list}```")
-
-        else:
-            await ctx.send("**This command is restricted**", delete_after=3)
-
-
-
-    @bot.command(name="developer")
-    @commands.cooldown(1, 10, commands.BucketType.user)
-    async def developer(ctx, choice: str):
-        # Check if developer mode is enabled for the user
-        developer_mode = ctx.author.id in developer_members and developer_members[ctx.author.id]
-
-        if choice.lower() == "true":
-            developer_members[ctx.author.id] = True
-            await ctx.send(f"Developer mode enabled for {ctx.author}")
-        elif choice.lower() == "false":
-            developer_members[ctx.author.id] = False
-            await ctx.send(f"Developer mode disabled for {ctx.author}")
-        else:
-            await ctx.send("Invalid choice.")
     
-
 
 
     @bot.command(name="help")
@@ -444,7 +514,6 @@ def bbot(bot, developer_members, start_time):
         embed_bot.add_field(name="`developer {choice}`", value="Enable developer mode. choices - true & false", inline=False)
         embed_bot.add_field(name="`about`", value="about the bot", inline=False)
         embed_bot.add_field(name="`help`", value="command list", inline=False)
-        embed_bot.add_field(name="`invite`", value="invite the bot", inline=False)
         embed_bot.add_field(name="`uptime`", value="Bot uptime", inline=False)
         embed_bot.add_field(name="`support`", value="Support server link", inline=False)
         embed_bot.add_field(name="`owner`", value="shows owner of the bot", inline=False)
@@ -524,6 +593,10 @@ def bbot(bot, developer_members, start_time):
         embed_music.add_field(name='`ai.join`', value="Join your voice channel", inline=False)
         embed_music.add_field(name='`ai.play {song name}`', value="Play a song from internet", inline=False)
         embed_music.add_field(name='`ai.loop`', value="Enable loop", inline=False)
+        embed_music.add_field(name='`ai.stop`', value="Stop the playback", inline=False)
+        embed_music.add_field(name='`ai.resume`', value="Resume the plaback", inline=False)
+        embed_music.add_field(name='`ai.pause`', value="Pause the playback", inline=False)
+        embed_music.add_field(name='`ai.volume`', value="Increase or decrease the volume of the playback.", inline=False)
         embed_music.add_field(name='`ai.leave`', value="Stop the playback and leave. **Do NOT force LuminaryAI to leave the voice channel. Just use this command.**", inline=False)
 
         help_select = Select(placeholder="Make a selection", options=[
@@ -545,35 +618,40 @@ def bbot(bot, developer_members, start_time):
             description="[support server](<https://discord.gg/3fRkNa3HR9>)\n[Invite bot](<https://discord.com/oauth2/authorize?client_id=1110111253256482826&permissions=3025808252417&response_type=code&redirect_uri=https%3A%2F%2Fdiscordapp.com%2Foauth2%2Fauthorize%3F%26client_id%3D1110111253256482826%26scope%3Dbot&scope=bot+guilds>)\n\nLuminaryAI is like a smart friend on Discord, using a powerful AI engine called 'Luminary' made by AlphasT101. It's here to help everyone in the Discord group with anything you need.",
             color=0x99ccff  # Convert hex color to integer
         )
-        await ctx.send(embed=help_embbed, view=help_view)
+        help_msg = await ctx.send(embed=help_embbed, view=help_view)
         async def help_callback(interaction):
             if help_select.values[0] == "Bot related":
-                await interaction.response.send_message(embed=embed_bot)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_bot, view=help_view)
+
             elif help_select.values[0] == "AI":
-                await interaction.response.send_message(embed=embed_ai)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_ai, view=help_view)
+
             elif help_select.values[0] == "General":
-                await interaction.response.send_message(embed=embed_general)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_general, view=help_view)
+
             elif help_select.values[0] == "Fun":
-                await interaction.response.send_message(embed=embed_fun)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_fun, view=help_view)
+
             elif help_select.values[0] == "Moderation":
-                await interaction.response.send_message(embed=embed_moderation)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_moderation, view=help_view)
+
             elif help_select.values[0] == "Automod":
-                await interaction.response.send_message(embed=embed_automod)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_automod, view=help_view)
+
             elif help_select.values[0] == "Admin":
-                await interaction.response.send_message(embed=embed_admin)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_admin, view=help_view)
+
             elif help_select.values[0] == "Music":
-                await interaction.response.send_message(embed=embed_music)
+                await interaction.response.defer()
+                await help_msg.edit(embed=embed_music, view=help_view)
+
 
 
         help_select.callback = help_callback
-
-
-
-    @bot.command(name="sync")
-    async def sync(ctx):
-        if ctx.author.id == 1026388699203772477:
-            await ctx.send("**<@1026388699203772477> Syncing slash commands...**")
-            await bot.tree.sync()
-            await ctx.send("**<@1026388699203772477> Slash commands synced!**")
-        else:
-            return
