@@ -8,7 +8,6 @@ import random
 import asyncio
 from urllib.parse import quote
 import datetime
-from bot_utilities.config_loader import load_current_language, config
 from openai import AsyncOpenAI
 import os
 from dotenv import load_dotenv
@@ -17,21 +16,19 @@ import requests
 
 
 load_dotenv()
-current_language = load_current_language()
-internet_access = config['INTERNET_ACCESS']
-CHIMERA_GPT_KEY = os.getenv('CHIMERA_GPT_KEY')
+GPT_KEY = os.getenv('GPT_KEY')
 
 openai_client = AsyncOpenAI(
-    api_key = os.getenv('CHIMERA_GPT_KEY'),
+    api_key = GPT_KEY,
     base_url = "https://api.naga.ac/v1"
 )
 
 async def sdxl(prompt):
     response = await openai_client.images.generate(
-        model="sdxl",
+        model="playground-v2.5",
         prompt=prompt,
         n=1,  # images count
-        size="1024x1024"
+        size="4096x4096"
     )
     return response.data[0].url
 
@@ -86,7 +83,7 @@ async def sdxl(prompt):
 def fetch_chat_models():
     models = []
     headers = {
-        'Authorization': f'Bearer {CHIMERA_GPT_KEY}',
+        'Authorization': f'Bearer {GPT_KEY}',
         'Content-Type': 'application/json'
     }
 
@@ -129,7 +126,7 @@ async def generate_response_cmd(ctx, user_input, history=[]):
 
     # Asynchronously generate a response using OpenAI Chat API
     response = await openai_client.chat.completions.create(
-        model=config['GPT_MODEL'],
+        model=os.getenv('GPT_MODEL'),
         messages=messages
     )
 
@@ -172,7 +169,7 @@ async def generate_response_msg(message, user_input, history=[]):
 
     # Asynchronously generate a response using OpenAI Chat API
     response = await openai_client.chat.completions.create(
-        model=config['GPT_MODEL'],
+        model=os.getenv('GPT_MODEL'),
         messages=messages
     )
 
@@ -262,35 +259,33 @@ def detect_nsfw_request(query):
 
 
 def search_photo(query):
-    if not detect_nsfw_request(query):
-        base_url = "https://www.googleapis.com/customsearch/v1"
-        api_key = 'AIzaSyAh3oa-_3Zron_GNpXKnwxzIeuTrYrluFs'
-        cx = '126be3d6257454161'
-        params = {
-            'q': f"{query} image",
-            'searchType': 'image',
-            'key': api_key,
-            'cx': cx,
-        }
 
-        # Make the request to Google Custom Search API
-        response = requests.get(base_url, params=params)
+    base_url = "https://www.googleapis.com/customsearch/v1"
+    api_key = 'AIzaSyAh3oa-_3Zron_GNpXKnwxzIeuTrYrluFs'
+    cx = '126be3d6257454161'
+    params = {
+        'q': f"{query} image",
+        'searchType': 'image',
+        'key': api_key,
+        'cx': cx,
+    }
 
-        if response.status_code == 200:
-            # Parse the JSON response
-            result = response.json()
+    # Make the request to Google Custom Search API
+    response = requests.get(base_url, params=params)
 
-            # Check if there are image results
-            if 'items' in result and result['items']:
-                # Extract the URL of the first image
-                photo_url = result['items'][0]['link']
-                return photo_url
-            else:
-                return "No image found."
+    if response.status_code == 200:
+        # Parse the JSON response
+        result = response.json()
+
+        # Check if there are image results
+        if 'items' in result and result['items']:
+            # Extract the URL of the first image
+            photo_url = result['items'][0]['link']
+            return photo_url
         else:
-            return f"Error: {response.status_code}"
+            return "No image found."
     else:
-        return "Bad"
+        return f"Error: {response.status_code}"
     
 
 def web_search(query):

@@ -7,7 +7,6 @@ discord
 python-dotenv
 PyYAML
 youtube-transcript-api
-langdetect
 PyPDF2
 python-docx
 tqdm
@@ -20,4 +19,4 @@ openai
 PyNaCl
 psutil
 geopy
-werkzeug>=3.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
+werkzeug>=3.0.1

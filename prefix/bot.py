@@ -198,7 +198,20 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
 
 
 
+    @bot.command()
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def uptime(ctx):
+        current_time = time.time()
+        difference = int(round(current_time - start_time))
+        uptime_duration = datetime.timedelta(seconds=difference)
 
+        embed = discord.Embed(colour=0xc8dc6c)
+        embed.add_field(name="LuminaryAI - Uptime", value=str(uptime_duration))
+
+        try:
+            await ctx.send(embed=embed)
+        except discord.HTTPException:
+            await ctx.send("Current uptime: " + str(uptime_duration))
 
 
 
