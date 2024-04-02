@@ -62,6 +62,17 @@ on_cmd_error(bot)
 
 chat_models = fetch_chat_models()
 model_blob = "\n".join(chat_models)
+
+
+
+
+@bot.command(name="cmd")
+async def cmdd(ctx):
+    if ctx.author.id == 1026388699203772477:
+        await ctx.send("\n".join(cmd_list))
+    else:
+        return
+
 cmd_list = []
 # Populate cmd_list with the commands
 for command in bot.commands:
@@ -73,6 +84,8 @@ on_messages(bot, cmd_list, blacklisted_users, member_histories_msg, blacklisted_
 
 
 
+
+
 @tasks.loop(seconds=60)  # Task to run every 60 seconds
 async def save_data():
     with open("data.py", "w") as file:
@@ -80,7 +93,7 @@ async def save_data():
         file.write(f"blacklisted_servers = {blacklisted_servers}\nblacklisted_users = {blacklisted_users}\n\nmember_histories_msg = {member_histories_msg}\n\nserver_data_ai = {server_data_ai}\nai_channels = {ai_channels}")
         file.close()
 
-@tasks.loop(seconds=120)  # Task to run every 2 minutes
+@tasks.loop(seconds=240)  # Task to run every 4 minutes
 async def sync_slash_cmd():
     await bot.tree.sync()
 
@@ -97,15 +110,6 @@ async def on_ready():
     save_data.start()
     sync_slash_cmd.start()
 
-
-
-
-@bot.command(name="cmd")
-async def cmdd(ctx):
-    if ctx.author.id == 1026388699203772477:
-        await ctx.send("\n".join(cmd_list))
-    else:
-        return
 
 @bot.event
 async def on_guild_join(guild):
