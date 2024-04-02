@@ -3,7 +3,7 @@ from discord.ext import commands, tasks
 # from aiml import Kernel
 # import inspect
 # import requests
-import yaml
+# import yaml
 from data import blacklisted_servers, member_histories_msg, blacklisted_users
 from bot_utilities.ai_utils import fetch_chat_models
 from dotenv import load_dotenv
@@ -120,8 +120,5 @@ async def on_guild_remove(guild):
     await channel.send(embed=embed)
 
 
-<<<<<<< HEAD
-bot.run()
-=======
+
 bot.run(os.getenv('BOT_TOKEN'))
->>>>>>> 756de5a (a)

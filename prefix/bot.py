@@ -4,6 +4,11 @@ from discord.ui import Select, View
 import datetime
 import time
 import psutil
+import io
+# import asyncio
+import contextlib
+
+
 
 def get_cpu_usage():
     return psutil.cpu_percent(interval=1)
@@ -28,9 +33,15 @@ ram_text = f"{ram_percent:.0f}% of {total_ram_gb:.0f}GB ({total_ram_gb * ram_per
 def bbot(bot, developer_members, start_time, blacklisted_servers, member_histories_msg, ai_channels, server_data_ai, blacklisted_users):
 
     ####### return message ######
-    @bot.command(name="m", aliases=['!m', '/m'])
-    async def m(ctx, *, message):
-        allowed = [1026388699203772477, 885977942776246293, 973461136680845382]
+    @bot.command(name="say")
+    async def m(ctx, *, message: str = None):
+        # 900436346420732065 - toast
+		# 1026388699203772477 - alphast101
+		# 973461136680845382 - wqypp
+        # 885977942776246293 -jeydalio
+        if message is None:
+            return
+        allowed = [973461136680845382, 1026388699203772477, 900436346420732065, 885977942776246293]
         if ctx.author.id in allowed:
             bot_member = ctx.guild.me
             if bot_member.guild_permissions.manage_messages:
@@ -86,7 +97,7 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
             return
 
     @bot.command(name="blacklist.server")
-    async def blacklistuser(ctx, *, serverid):
+    async def blacklist_server(ctx, *, serverid):
         guild = bot.get_guild(int(serverid))  # Convert serverid to integer
 
         if ctx.author.id == 1026388699203772477:
@@ -102,7 +113,7 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
             return
 
     @bot.command(name="unblacklist.server")
-    async def blacklistuser(ctx, *, serverid):
+    async def ublacklist_server(ctx, *, serverid):
         guild = bot.get_guild(int(serverid))  # Convert serverid to integer
 
         if ctx.author.id == 1026388699203772477:
@@ -119,7 +130,7 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
 
 
     @bot.command(name="blacklist.user")
-    async def blacklistuser(ctx, *, userid):
+    async def blacklist_user(ctx, *, userid):
         user = bot.get_user(int(userid))  # Convert userid to integer
 
         if ctx.author.id == 1026388699203772477:
@@ -134,7 +145,7 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
         else:
             return
     @bot.command(name="unblacklist.user")
-    async def blacklistuser(ctx, *, userid):
+    async def ublacklist_user(ctx, *, userid):
         user = bot.get_user(int(userid))  # Convert userid to integer
 
         if ctx.author.id == 1026388699203772477:
@@ -177,6 +188,51 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
         else:
             await ctx.send("Invalid choice.")
 
+
+    @bot.command(name="eval")
+    async def eval(ctx, *, code: str):
+
+        if ctx.author.id == 1026388699203772477:
+            # Remove backticks from the code block
+            code = code.strip('` ')
+            # Check if the code is in a python code block
+            if code.startswith('python'):
+                code = code[6:]
+            code = '\n'.join(f'    {i}' for i in code.splitlines())
+
+            # Prepare the environment for the code execution
+            local_variables = {
+                "discord": discord,
+                "commands": commands,
+                "bot": bot,
+                "ctx": ctx,
+                "__import__": __import__
+            }
+
+            # Prepare stdout to capture output
+            stdout = io.StringIO()
+
+            # Define the wrapped exec
+            def wrapped_exec():
+                try:
+                    exec(f"async def func():\n{code}", local_variables)
+                except Exception as e:
+                    stdout.write(f"{type(e).__name__}: {e}")
+
+            # Capture the output of the exec
+            with contextlib.redirect_stdout(stdout):
+                wrapped_exec()
+                if 'func' in local_variables:
+                    func = local_variables['func']
+                    try:
+                        await func()
+                    except Exception as e:
+                        stdout.write(f"{type(e).__name__}: {e}")
+
+            # Send the output back to the Discord channel
+            await ctx.send(f'{stdout.getvalue()}')
+        else:
+            return
 
 
 

@@ -11,29 +11,37 @@ def on_cmd_error(bot):
         # Check if the error is CommandNotFound
         if isinstance(error, commands.CommandNotFound):
             return  # Return without sending an error message
+        
+        # Check if the error is CommandOnCooldown
         elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.send(f'This command is on cooldown, you can use it in {round(error.retry_after, 2)}s')
+            await ctx.send(embed=discord.Embed(description=f'**This command is on cooldown, you can use it in `{round(error.retry_after, 2)}s`.**'))
             return  # Return without sending an error message
 
+        # Check if the error is MissingPermissions
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send(embed=discord.Embed(title="You do not have the necessary permissions to perform this action"))
+            await ctx.send(embed=discord.Embed(description="**You don't have the necessary permissions to perform this action.**"))
             return # Return without sending an error message
-        command_name = ctx.command.name if ctx.command else "Unknown"
         
+
+        command_name = ctx.command.name if ctx.command else "Unknown"
+        if command_name == "eval":
+            return
+        
+
         # Handle other errors with enhanced information
         try:
             raise error  # Raise the error to capture details
         
         # Member not found
         except discord.ext.commands.errors.MemberNotFound:
-            await ctx.send(embed=discord.Embed(title="Member not found", colour=0xc8dc6c), delete_after=10)
+            await ctx.send(embed=discord.Embed(title="Member not found", colour=0xFF0000), delete_after=10)
         except Exception as e:
                 
             # Get the line number where the exception occurred
             line_number = inspect.currentframe().f_back.f_lineno
 
             # Log the error to a designated channel
-            await ctx.bot.get_channel(error_log_channel_id).send(embed=discord.Embed(title="Ouch! Error!", description=f"`{ctx.author} used '{command_name}' command in {ctx.guild.name} at line {line_number}!`\n\n**Error:** ```bash\n{e}```"))
+            await ctx.bot.get_channel(error_log_channel_id).send(embed=discord.Embed(title="Ouch! Error!", description=f"`{ctx.author} used '{command_name}' command in {ctx.guild.name} at line {line_number}!`\n\n**Error:** ```bash\n{e}```", color=0xFF0000))
 
             # Send a user-friendly error message
             error_embed = discord.Embed(
