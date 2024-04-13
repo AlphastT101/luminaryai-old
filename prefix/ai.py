@@ -22,11 +22,6 @@ async def embed(ctx ,title, description, color):
 
 
 
-aiml_folder = "data"
-
-# Dictionary to store server-specific data
-# server_data_aiml = {}
-# aiml_channels = {}
 
 
 
@@ -35,35 +30,39 @@ aiml_folder = "data"
 def ai(bot, member_histories_msg):
 
     ############## ai ##############
-    # @bot.command(name='activate')
-    # @commands.cooldown(1, 10, commands.BucketType.user)
-    # async def start(ctx):
-    #     # Get or create server-specific data and set AI responses as false
-    #     server_id = ctx.guild.id
-    #     if server_id not in server_data_ai:
-    #         server_data_ai[server_id] = {'response_enabled': False}
+    @bot.command(name='activate')
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    async def start(ctx):
+        if ctx.author.id != 1026388699203772477:
+            return
+        # Get or create server-specific data and set AI responses as false
+        server_id = ctx.guild.id
+        if server_id not in server_data_ai:
+            server_data_ai[server_id] = {'response_enabled': False}
 
-    #     # Check if the user is a moderator, administrator, or has a specific role
-    #     if any(role.permissions.manage_messages for role in ctx.author.roles) or ctx.author.id == 1026388699203772477:
+        # Check if the user is a moderator, administrator, or has a specific role
+        if any(role.permissions.manage_messages for role in ctx.author.roles) or ctx.author.id == 1026388699203772477:
 
-    #         if ctx.channel.slowmode_delay >= 10:
-    #             server_data_ai[server_id]['response_enabled'] = True #set ai to true
-    #             ai_channels[server_id] = ctx.channel.id  # Store the channel ID
-    #             await ctx.send(f'AI enabled. AI responses will be sent in <#{ctx.channel.id}>.')
-    #         else:
-    #             await ctx.send("Enable 10s slow mode first.")
-    #     else:
-    #         await ctx.send("You don't have permission to use this command.")
-    # @bot.command(name='deactivate')
-    # @commands.cooldown(1, 10, commands.BucketType.user)
-    # async def stop(ctx):
-    #     server_id = ctx.guild.id
-    #     # Check if the user is a moderator, administrator, or has a specific role
-    #     if any(role.permissions.manage_messages for role in ctx.author.roles) or ctx.author.id == 1026388699203772477:
-    #         server_data_ai[server_id]['response_enabled'] = False
-    #         await ctx.send("AI disabled.")
-    #     else:
-    #         await ctx.send("You don't have permission to use this command.")
+            if ctx.channel.slowmode_delay >= 10:
+                server_data_ai[server_id]['response_enabled'] = True #set ai to true
+                ai_channels[server_id] = ctx.channel.id  # Store the channel ID
+                await ctx.send(f'AI enabled. AI responses will be sent in <#{ctx.channel.id}>.')
+            else:
+                await ctx.send("Enable 10s slow mode first.")
+        else:
+            await ctx.send("You don't have permission to use this command.")
+    @bot.command(name='deactivate')
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    async def stop(ctx):
+        if ctx.author.id != 1026388699203772477:
+            return
+        server_id = ctx.guild.id
+        # Check if the user is a moderator, administrator, or has a specific role
+        if any(role.permissions.manage_messages for role in ctx.author.roles) or ctx.author.id == 1026388699203772477:
+            server_data_ai[server_id]['response_enabled'] = False
+            await ctx.send("AI disabled.")
+        else:
+            await ctx.send("You don't have permission to use this command.")
 
 
 

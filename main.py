@@ -22,7 +22,7 @@ from prefix.moderation import *
 
 from events.on_cmd_error import *
 from events.on_messages import *
-
+from events.member_join import *
 
 
 
@@ -58,7 +58,7 @@ bot_slash(bot, start_time)
 ai_slash(bot)
 
 on_cmd_error(bot)
-
+member_join(bot)
 
 chat_models = fetch_chat_models()
 model_blob = "\n".join(chat_models)
@@ -93,12 +93,17 @@ async def save_data():
         file.write(f"blacklisted_servers = {blacklisted_servers}\nblacklisted_users = {blacklisted_users}\n\nmember_histories_msg = {member_histories_msg}\n\nserver_data_ai = {server_data_ai}\nai_channels = {ai_channels}")
         file.close()
 
-@tasks.loop(seconds=240)  # Task to run every 4 minutes
+@tasks.loop(seconds=300) # keep the slash commands synced
 async def sync_slash_cmd():
     await bot.tree.sync()
 
 
-
+@tasks.loop(seconds=480)
+async def send_data_file():
+    # Task to run every 8 minutes (480 seconds)
+    channel = bot.get_channel(1227153352228601877)
+    file = discord.File("data.py", filename="data.py")
+    await channel.send(file=file)
 
 @bot.event
 async def on_ready():
@@ -107,8 +112,9 @@ async def on_ready():
     print(f'We have logged in as {bot.user}')
     print(f"\033[1;38;5;202mAvailable models: {model_blob}\033[0m")
     print(f"\033[1;38;5;46mCurrent model: {os.getenv('GPT_MODEL')}\033[0m")
-    save_data.start()
-    sync_slash_cmd.start()
+    # save_data.start()
+    # sync_slash_cmd.start()
+    # await send_data_file.start()
 
 
 @bot.event

@@ -1,11 +1,11 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-from bot_utilities.ai_utils import generate_image_prodia
+from bot_utilities.ai_utils import generate_image_prodia, vision
 import random
 from model_enum import Model
 import asyncio
-from data import blacklisted_servers
+from data import blacklisted_servers, blacklisted_users
 blacklisted_words = [
     "naked",
     "porn",
@@ -62,9 +62,8 @@ def ai_slash(bot):
         model="Model to generate image",
         sampler="Sampler for denosing",
     )
-    @commands.guild_only()
     async def imagine(interaction:discord.Interaction, prompt: str, model: app_commands.Choice[str], sampler: app_commands.Choice[str], seed: int = None):
-        if interaction.guild.id in blacklisted_servers:
+        if interaction.guild.id in blacklisted_servers or interaction.author.id in blacklisted_users:
             return
         for word in prompt.split():
             is_nsfw = word in blacklisted_words
@@ -89,3 +88,23 @@ def ai_slash(bot):
         embed.add_field(name='Seed', value=f'- {seed}', inline=False)
     
         sent_message = await interaction.followup.send(embed=embed, file=img_file)
+
+
+    @commands.guild_only()
+    @bot.tree.command(name="vision", description="Vision an image")
+    async def vision_command(interaction: discord.Interaction, message: str, image_link: str):
+        if interaction.guild.id in blacklisted_servers or interaction.user.id in blacklisted_users:
+            return
+        
+        await interaction.response.defer(ephemeral=False)
+
+        response = await vision(message, image_link)
+
+        response_embed = discord.Embed(
+            title="LuminaryAI - vision",
+            description=response,
+            color=discord.Color.green() if response != "Ouch! Something went wrong!" else discord.Color.red()
+        )
+
+        response_embed.set_footer(text="Reply from LuminaryAI Image Vision. LuminaryAI does not guarantee the accuracy of the response provided. The Vision model is currently in **beta**")
+        await interaction.followup.send(embed=response_embed)

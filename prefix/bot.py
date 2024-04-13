@@ -5,9 +5,10 @@ import datetime
 import time
 import psutil
 import io
-# import asyncio
 import contextlib
 
+import button_paginator as pg
+# from button_paginator import PaginatorView
 
 
 def get_cpu_usage():
@@ -281,7 +282,7 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
 
         about = discord.Embed(
             title='About',
-            description='[support server](<https://discord.gg/3fRkNa3HR9>)\n[Discord bot list](<https://top.gg/bot/1110111253256482826>)\n[Invite bot](<https://discord.com/oauth2/authorize?client_id=1110111253256482826&permissions=3025808252417&response_type=code&redirect_uri=https%3A%2F%2Fdiscordapp.com%2Foauth2%2Fauthorize%3F%26client_id%3D1110111253256482826%26scope%3Dbot&scope=bot+guilds>)\n[Discord bot list vote](<https://top.gg/bot/1110111253256482826/vote>)\n\nLuminaryAI, a Python and AI-powered Discord bot, adeptly replicates human-like conversation and can generate images. Through advanced technologies, it engages users in dynamic and natural dialogues. Designed to create interactive experiences, this bot transforms text-based interactions into lifelike discussions on the Discord platform.',
+            description="[support server](<https://discord.com/invite/hmMBe8YyJ4>)\n[Discord bot list](<https://top.gg/bot/1110111253256482826>)\n[Invite bot](<https://discord.com/oauth2/authorize?client_id=1110111253256482826&permissions=8&scope=bot>)\n[Discord bot list vote](<https://top.gg/bot/1110111253256482826/vote>)\n[Site](<https://luminaryai.netlify.app>)\n[Terms of Service](<https://luminaryai.netlify.app/tos>)\n\nLuminaryAI is your Discord bot powered by artificial intelligence. It utilizes cutting-edge AI features to enrich your server's experience, providing automated moderation, text filtering, image generation, and more!",
             color=0x99ccff  # Convert hex color to integer
         )
         about.add_field(name='Owner', value="alphast101", inline=True)
@@ -511,6 +512,13 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
             description="Increase or decrease the volume of the playback.",
             color=0x99ccff
         )
+
+        vision = discord.Embed(
+            title="Help: /vision",
+            description="Vision an image. This command is Slash only.",
+            color=0x99ccff
+        )
+        vision.add_field(name='Syntax:', value='```/vision {message} {image_link}```',inline=False)
         if command_info is None:
             await ctx.send("**Invalid command**", delete_after=3)
         elif command_info.lower() == "rps":
@@ -541,8 +549,6 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
             await ctx.send(embed=leave)
         elif command_info.lower() == "join":
             await ctx.send(embed=join)
-        elif command_info.lower() == "developer":
-            await ctx.send(embed=developer)
         elif command_info.lower() == "uptime":
             await ctx.send(embed=uptime)
         elif command_info.lower() == "ban":
@@ -567,6 +573,8 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
             await ctx.send(embed=pause)
         elif command_info.lower() == "volume":
             await ctx.send(embed=volume)
+        elif command_info.lower() == "vision":
+            await ctx.send(embed=vision)
         else:
             await ctx.send("**invalid command**",delete_after=3)
 
@@ -602,6 +610,8 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
         embed_ai.add_field(name='`ai.activate` **[DISABLED]**', value="Enable AI responses, You need a role with manage messages to run this command.\nModel: *Luminary*", inline=False)
         embed_ai.add_field(name='`ai.deactivate` **[DISABLED]**', value=" Disable AI responses, You need a role with manage messages to run this command.", inline=False)
         embed_ai.add_field(name='`ai.searchimg {prompt}`', value="Search the web for images.", inline=False)
+        embed_ai.add_field(name='`ai.search {prompt}`', value="Search the web.", inline=False)
+        embed_ai.add_field(name='`ai.vision {prompt}`', value="Vision an image.", inline=False)
         embed_ai.add_field(name='`@luminaryai {prompt}`', value="Ping LuminaryAI to generate text and images.", inline=False)
         embed_ai.add_field(name='`@luminaryai activate`', value="Enable AI responses using Luminary-ultra. You need admin permissions to run this command.", inline=False)
         embed_ai.add_field(name='`@luminaryai deactivate`', value="Disable AI responses. You need admin permissions to run this command..", inline=False)
@@ -684,7 +694,7 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
 
         help_embbed = discord.Embed(
             title="LuminaryAI - help",
-            description="[support server](<https://discord.gg/3fRkNa3HR9>)\n[Invite bot](<https://discord.com/oauth2/authorize?client_id=1110111253256482826&permissions=3025808252417&response_type=code&redirect_uri=https%3A%2F%2Fdiscordapp.com%2Foauth2%2Fauthorize%3F%26client_id%3D1110111253256482826%26scope%3Dbot&scope=bot+guilds>)\n\nLuminaryAI is like a smart friend on Discord, using a powerful AI engine called 'Luminary' made by AlphasT101. It's here to help everyone in the Discord group with anything you need.",
+            description="[support server](<https://discord.com/invite/hmMBe8YyJ4>)\n[Invite bot](<https://discord.com/oauth2/authorize?client_id=1110111253256482826&permissions=8&scope=bot>)\n\nLuminaryAI is like a smart friend on Discord, using a powerful AI engine called 'Luminary' made by AlphasT101. It's here to help everyone in the Discord group with anything you need.",
             color=0x99ccff  # Convert hex color to integer
         )
         help_msg = await ctx.send(embed=help_embbed, view=help_view)

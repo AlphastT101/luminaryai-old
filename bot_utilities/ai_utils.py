@@ -317,3 +317,31 @@ def web_search(query):
 
     except requests.RequestException as e:
         return f"An error occurred: {e}"
+    
+
+
+
+
+async def vision(prompt, image_link):
+    try:
+        response = await openai_client.chat.completions.create(
+            model="gemini-pro-vision",
+            messages=[
+            {
+                "role": "user",
+                "content": [
+                {"type": "text", "text": prompt},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                    "url": image_link
+                    },
+                },
+                ],
+            }
+            ],
+
+        )
+        return response.choices[0].message.content
+    except:
+        return "Ouch! Something went wrong!"
