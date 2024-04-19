@@ -90,7 +90,7 @@ async def error_mongo_embed(bot, ctx, e):
         print("Error found in line", line_number)
         error_embed.add_field(
          name=" ",
-         value = f"**Potential issue found:**\n- **File:** {file_location}\n- **Line:** {line_number}",
+         value = f"**Potential issue found:**\n- **File:** `{file_location}`\n- **Line:** `{line_number}`",
          inline=False
         )
         error_embed.set_footer(icon_url=bot.user.avatar, text='Saved')
