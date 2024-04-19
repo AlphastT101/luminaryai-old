@@ -4,6 +4,7 @@ discord.py
 requests
 flask
 discord
+motor
 python-dotenv
 PyYAML
 youtube-transcript-api

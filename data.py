@@ -5,3 +5,8 @@ member_histories_msg = {'1026388699203772477': [{'role': 'user', 'name': '102638
 
 server_data_ai = {1003940162046263347: {'response_enabled': False}}
 ai_channels = {1003940162046263347: 1183271465177600081}
+
+
+
+
+error_thumbnail='https://discord.com/assets/c7193e6e47d29b34d07e.svg'

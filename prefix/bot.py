@@ -1,13 +1,32 @@
+import logging
+import traceback
+import asyncio
 import discord
 from discord.ext import commands, tasks
 from discord.ui import Select, View
 import datetime
+from datetime import datetime
+
 import time
 import psutil
 import io
 import contextlib
+import pymongo
 
-import button_paginator as pg
+import data
+
+
+import motor.motor_asyncio
+from pymongo import MongoClient
+
+
+# Initialize the logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
+
+# import button_paginator as pg
 # from button_paginator import PaginatorView
 
 
@@ -30,8 +49,85 @@ total_ram_gb = psutil.virtual_memory().total / (1024 ** 3)  # Convert to GB
 ram_text = f"{ram_percent:.0f}% of {total_ram_gb:.0f}GB ({total_ram_gb * ram_percent / 100:.0f}GB)"
 
 
+async def loading_animation(ctx, loading_length=10):
+    loading_message = await ctx.reply("Loading" + "." * loading_length)
+    
+    for i in range(loading_length + 1):
+        # Create a loading bar with the specified size
+        bar = "[" + "#" * i + " " * (loading_length - i) + "]"
+        await loading_message.edit(content=f"Loading {bar} {i*10}%")
+        await asyncio.sleep(0.5)  # Adjust the sleep time as needed
+    
+    return loading_message
+
+async def error_mongo_embed(bot, ctx, e):
+        # Create an error embed after catching the exception
+        
+        error_embed = discord.Embed(
+            description=f'```bash\n{e}```',
+            color=discord.Color.red(),
+            timestamp=datetime.now()
+        )
+        error_embed.set_author(name=f'{bot.user.display_name.title()} - Mongo Error',icon_url='https://cdn.iconscout.com/icon/free/png-512/free-mongodb-3-1175138.png?f=webp&w=256')
+        # Get the last traceback frame from the exception
+        line_number = traceback.extract_tb(e.__traceback__)[-1].lineno
+        tb_frame = traceback.extract_tb(e.__traceback__)[-1]
+        file_location = tb_frame.filename  # File location
+
+        print("Error found in line", line_number)
+        error_embed.add_field(
+         name="🔧 Fix This ?",
+         value=f"Potential issue: `{file_location}` at line `{line_number}`",
+         inline=False
+        )
+        error_embed.set_footer(icon_url=bot.user.avatar, text='Saved')
+            
+        # Inform the user about the error
+        return error_embed
 
 def bbot(bot, developer_members, start_time, blacklisted_servers, member_histories_msg, ai_channels, server_data_ai, blacklisted_users):
+    
+    @bot.command(name="test_mb")
+    async def test_mb(ctx):
+     try:
+        # Connect to the database and collection
+        db = bot.mongoConnect['Database']
+        collection = db['Collection']
+
+        logger.info("Testing database connection.")
+        # Start loading animation
+        loading_message = await loading_animation(ctx, loading_length=10)    
+        # Edit the loading message to display DB and collection information
+        await loading_message.edit(content=f"### Database Information:\n```bash\n{db}```\n### Collection Information:\n```bash\n{collection}```")
+        
+        # Check if user has an entry in the collection
+        user_id = ctx.message.author.id
+        user_entry = await collection.find_one({"_id": user_id})
+        
+        # If user does not have an entry, create one
+        if user_entry is None:
+            new_data = {
+                "_id": user_id,
+                "check": 1
+            }
+            await collection.insert_one(new_data)
+            logger.info(f"New data inserted: {new_data}")
+            await loading_message.edit(content=f"```bash\nData inserted: {new_data}```")
+        else:
+            # Edit the loading message to show the data found for the user
+            await loading_message.edit(content=f"```bash\nUser entry: {user_entry}```")
+    
+     except Exception as e:
+        # Log any exceptions that occur
+        logger.error(f"An error occurred: {e}")
+        
+        # Create an error embed after catching the exception
+        error_embed = await error_mongo_embed(bot, ctx, e)
+
+        # Inform the user about the error
+        await ctx.reply(f"Sorry {ctx.message.author.mention}, there has been an error.")
+        await loading_message.edit(content=" ",embed=error_embed)
+    
 
     ####### return message ######
     @bot.command(name="say")

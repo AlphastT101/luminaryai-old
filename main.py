@@ -1,5 +1,13 @@
+import os
+import asyncio
+os.system("pip install -r requirements.txt")
+
+import ssl
+
 import discord
 from discord.ext import commands, tasks
+
+import motor.motor_asyncio
 # from aiml import Kernel
 # import inspect
 # import requests
@@ -7,8 +15,6 @@ from discord.ext import commands, tasks
 from data import blacklisted_servers, member_histories_msg, blacklisted_users
 from bot_utilities.ai_utils import fetch_chat_models
 from dotenv import load_dotenv
-import os
-
 
 from slash.bot import *
 from slash.ai import *
@@ -128,7 +134,19 @@ async def on_guild_remove(guild):
     channel = bot.get_channel(1189110778599575592)
     embed = discord.Embed(title="Guild Left", description=f"The bot has left the server {guild.name}", color=0xff0000)
     await channel.send(embed=embed)
+ 
+ 
 
+async def main():
+    async with bot:
+        # Create an SSL context to handle the SSL/TLS connection
+        # ssl_context = ssl.create_default_context()
+        ssl_context = ssl.create_default_context()
 
+        ssl_context.load_verify_locations("/etc/ssl/certs/ca-certificates.crt")
 
-bot.run(os.getenv('BOT_TOKEN'))
+        # Create the AsyncIOMotorClient with the MongoDB URI and SSL context
+        bot.mongoConnect = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URI"),ssl=True)
+        await bot.start(os.getenv('BOT_TOKEN'))
+
+asyncio.run(main())
