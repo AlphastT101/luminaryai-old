@@ -90,7 +90,7 @@ async def error_mongo_embed(bot, ctx, e):
         print("Error found in line", line_number)
         error_embed.add_field(
          name=" ",
-         value = f"**Potential issue found:**\n- **File:** `{file_location}`\n- **Line:** `{line_number}`",
+         value = f":warning: **Potential issue found:**\n- **File:** `{file_location}`\n- **Line:** `{line_number}`",
          inline=False
         )
         error_embed.set_footer(icon_url=bot.user.avatar, text='Saved')
@@ -98,6 +98,23 @@ async def error_mongo_embed(bot, ctx, e):
         # Inform the user about the error
         return error_embed
 
+async def send_success_messages(ctx, db_info, collection_info):
+    # Create a success embed for database information
+    db_embed = discord.Embed(title="Success: Database Information", color=discord.Color.green())
+    db_embed.add_field(name="Database Details", value=f"```bash\n{db_info}```", inline=False)
+    
+    # Send the database success embed
+    db_message = await ctx.send(embed=db_embed)
+
+    # Create a success embed for collection information
+    collection_embed = discord.Embed(title="Success: Collection Information", color=discord.Color.green())
+    collection_embed.add_field(name="Collection Details", value=f"```bash\n{collection_info}```", inline=False)
+    
+    # Send the collection success embed
+    collection_message = await ctx.send(embed=collection_embed)
+
+    # Return the messages if you want to edit them later
+    return db_message, collection_message
 def bbot(bot, developer_members, start_time, blacklisted_servers, member_histories_msg, ai_channels, server_data_ai, blacklisted_users):
     
     @bot.command(name="test_mb")
@@ -109,9 +126,11 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
 
         logger.info("Testing database connection.")
         # Start loading animation
-        loading_message = await loading_animation(ctx, loading_length=10)    
+        loading_message = await loading_animation(ctx, loading_length=10)   
+        send_success =  await send_success_messages(ctx, db, collection) 
         # Edit the loading message to display DB and collection information
-        await loading_message.edit(content=f"### Database Information:\n```bash\n{db}```\n### Collection Information:\n```bash\n{collection}```")
+        await loading_message.edit(embed=send_success)
+        # content=f"### Database Information:\n```bash\n{db}```\n### Collection Information:\n```bash\n{collection}```")
         
         # Check if user has an entry in the collection
         user_id = ctx.message.author.id
