@@ -93,7 +93,7 @@ async def error_mongo_embed(bot, ctx, e):
          value = f":warning: **Potential issue found:**\n- **File:** `{file_location}`\n- **Line:** `{line_number}`",
          inline=False
         )
-        error_embed.set_footer(icon_url=bot.user.avatar, text='Saved')
+        error_embed.set_footer(icon_url=bot.user.avatar, text='Error Found')
             
         # Inform the user about the error
         return error_embed
