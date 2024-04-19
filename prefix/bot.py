@@ -100,15 +100,15 @@ async def error_mongo_embed(bot, ctx, e):
 
 async def send_success_messages(ctx, db_info, collection_info):
     # Create a success embed for database information
-    db_embed = discord.Embed(title="Success: Database Information", color=discord.Color.green())
-    db_embed.add_field(name="Database Details", value=f"```bash\n{db_info}```", inline=False)
+    db_embed = discord.Embed(title="Gathering Database Information", color=discord.Color.green())
+    db_embed.add_field(name="Database Details", value=f"```bash\n{db_info}```\nCompleted 1/2 - :white_check_mark:", inline=False)
     
     # Send the database success embed
     db_message = await ctx.send(embed=db_embed)
 
     # Create a success embed for collection information
-    collection_embed = discord.Embed(title="Success: Collection Information", color=discord.Color.green())
-    collection_embed.add_field(name="Collection Details", value=f"```bash\n{collection_info}```", inline=False)
+    collection_embed = discord.Embed(title="Gathering Collection Information", color=discord.Color.green())
+    collection_embed.add_field(name="Collection Details", value=f"```bash\n{collection_info}```\nCompleted 2/2 - :white_check_mark:", inline=False)
     
     # Send the collection success embed
     collection_message = await ctx.send(embed=collection_embed)
