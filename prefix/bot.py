@@ -48,17 +48,30 @@ cpu_text = f"{cpu_percent:.0f}% of {cpu_cores} cores"
 total_ram_gb = psutil.virtual_memory().total / (1024 ** 3)  # Convert to GB
 ram_text = f"{ram_percent:.0f}% of {total_ram_gb:.0f}GB ({total_ram_gb * ram_percent / 100:.0f}GB)"
 
-
 async def loading_animation(ctx, loading_length=10):
-    loading_message = await ctx.reply("Loading" + "." * loading_length)
+    # Create the loading message with initial state
+    loading_message = await ctx.reply(f"⏳ Loading: {' ' * loading_length} | 0%")
     
+    # Define the progress bar segments
+    progress_bar_full = "█"
+    progress_bar_empty = "░"
+    
+    # Update the progress bar during loading
     for i in range(loading_length + 1):
-        # Create a loading bar with the specified size
-        bar = "[" + "#" * i + " " * (loading_length - i) + "]"
-        await loading_message.edit(content=f"Loading {bar} {i*10}%")
-        await asyncio.sleep(0.5)  # Adjust the sleep time as needed
-    
+        progress = i / loading_length  # Calculate the progress percentage
+        bar = progress_bar_full * i + progress_bar_empty * (loading_length - i)
+        percentage = int(progress * 100)
+        
+        # Update the loading message with the current progress
+        await loading_message.edit(content=f"⏳ Loading: {bar} | {percentage}%")
+        
+        # Wait for a short duration before updating again
+        await asyncio.sleep(0.4)  # Adjust the sleep time as needed
+
+    # Return the final loading message
     return loading_message
+
+
 
 async def error_mongo_embed(bot, ctx, e):
         # Create an error embed after catching the exception
@@ -76,8 +89,8 @@ async def error_mongo_embed(bot, ctx, e):
 
         print("Error found in line", line_number)
         error_embed.add_field(
-         name="🔧 Fix This ?",
-         value=f"Potential issue: `{file_location}` at line `{line_number}`",
+         name=" ",
+         value = f"**Potential issue found:**\n- **File:** {file_location}\n- **Line:** {line_number}",
          inline=False
         )
         error_embed.set_footer(icon_url=bot.user.avatar, text='Saved')
