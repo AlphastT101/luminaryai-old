@@ -7,6 +7,9 @@ discord
 motor
 python-dotenv
 PyYAML
+yt-dlp
+youtube_search==2.1.2
+youtube-search-python==1.6.6
 youtube-transcript-api
 PyPDF2
 python-docx
@@ -21,3 +24,8 @@ PyNaCl
 psutil
 geopy
 werkzeug>=3.0.1
+discord.py[voice]
+Ffmpeg
+PyNaCl
+youtube-search-python
+youtube_dl

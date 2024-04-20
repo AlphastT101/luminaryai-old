@@ -103,63 +103,63 @@ async def send_success_messages(ctx, db_info, collection_info):
     db_embed = discord.Embed(title="Gathering Database Information", color=discord.Color.green())
     db_embed.add_field(name=":file_cabinet: - Database Details:", value=f"```bash\n{db_info}```\nCompleted 1/2 - :white_check_mark:", inline=False)
     
-    # Send the database success embed
-    db_message = await ctx.send(embed=db_embed)
-
     # Create a success embed for collection information
     collection_embed = discord.Embed(title="Gathering Collection Information:", color=discord.Color.green())
     collection_embed.add_field(name="🗃️ - Collection Details:", value=f"```bash\n{collection_info}```\nCompleted 2/2 - :white_check_mark:", inline=False)
     
-    # Send the collection success embed
-    collection_message = await ctx.send(embed=collection_embed)
+    # Return the success Embed objects
+    return db_embed, collection_embed
 
-    # Return the messages if you want to edit them later
-    return db_message, collection_message
+
+
+
 def bbot(bot, developer_members, start_time, blacklisted_servers, member_histories_msg, ai_channels, server_data_ai, blacklisted_users):
     
     @bot.command(name="test_mb")
     async def test_mb(ctx):
-     try:
-        # Connect to the database and collection
-        db = bot.mongoConnect['Database']
-        collection = db['Collection']
+        try:
+            # Connect to the database and collection
+            db = bot.mongoConnect['Database']
+            collection = db['Collection']
 
-        logger.info("Testing database connection.")
-        # Start loading animation
-        loading_message = await loading_animation(ctx, loading_length=10)   
-        send_success =  await send_success_messages(ctx, db, collection) 
-        # Edit the loading message to display DB and collection information
-        await loading_message.edit(embed=send_success)
-        # content=f"### Database Information:\n```bash\n{db}```\n### Collection Information:\n```bash\n{collection}```")
+            logger.info("Testing database connection.")
+            # Start loading animation
+            loading_message = await loading_animation(ctx, loading_length=10)   
+            db_embed, collection_embed = await send_success_messages(ctx, db, collection) 
+            # Send the success messages
+            db_message = await ctx.send(embed=db_embed)
+            collection_message = await ctx.send(embed=collection_embed)
+            
+            # Edit the loading message
+            await loading_message.delete()
+            
+            # Check if user has an entry in the collection
+            user_id = ctx.message.author.id
+            user_entry = await collection.find_one({"_id": user_id})
+            
+            # If user does not have an entry, create one
+            if user_entry is None:
+                new_data = {
+                    "_id": user_id,
+                    "check": 1
+                }
+                await collection.insert_one(new_data)
+                logger.info(f"New data inserted: {new_data}")
+                await ctx.send(f"Data inserted: {new_data}")
+            else:
+                # Inform the user about the data found for the user
+                await ctx.send(f"User entry: {user_entry}")
         
-        # Check if user has an entry in the collection
-        user_id = ctx.message.author.id
-        user_entry = await collection.find_one({"_id": user_id})
-        
-        # If user does not have an entry, create one
-        if user_entry is None:
-            new_data = {
-                "_id": user_id,
-                "check": 1
-            }
-            await collection.insert_one(new_data)
-            logger.info(f"New data inserted: {new_data}")
-            await loading_message.edit(content=f"```bash\nData inserted: {new_data}```")
-        else:
-            # Edit the loading message to show the data found for the user
-            await loading_message.edit(content=f"```bash\nUser entry: {user_entry}```")
-    
-     except Exception as e:
-        # Log any exceptions that occur
-        logger.error(f"An error occurred: {e}")
-        
-        # Create an error embed after catching the exception
-        error_embed = await error_mongo_embed(bot, ctx, e)
+        except Exception as e:
+            # Log any exceptions that occur
+            logger.error(f"An error occurred: {e}")
+            
+            # Create an error embed after catching the exception
+            error_embed = await error_mongo_embed(bot, ctx, e)
 
-        # Inform the user about the error
-        await ctx.reply(f"Sorry {ctx.message.author.mention}, there has been an error.")
-        await loading_message.edit(content=" ",embed=error_embed)
-    
+            # Inform the user about the error
+            await ctx.reply(f"Sorry {ctx.message.author.mention}, there has been an error.")
+            await ctx.send(embed=error_embed)
 
     ####### return message ######
     @bot.command(name="say")
