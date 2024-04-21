@@ -90,13 +90,13 @@ class Music(commands.Cog):
   
   async def play(self, ctx, *, args):
     """Plays a song from youtube"""
-    await ctx.send('## Ctx:', ctx)
     if not ctx.author.voice:
       await ctx.send("You are not in a voice channel!")
 
 
     if self.voice_client is None:
-      self.voice_client = await ctx.author.voice.channel.connect()
+       self.voice_client = await ctx.author.voice.channel.connect()
+
 
 
     # Search the song
@@ -748,16 +748,14 @@ def music(bot):
 
     @bot.command(name='play')
     @commands.cooldown(1, 15, commands.BucketType.user)
-    async def play(ctx, *, args = 'chill step coding music'):
+    async def play(ctx, *, args='chill step coding music'):
      print('working')
      try:
-         music_instance = Music(bot)  # Assuming Music is the name of your Music class
-         await music_instance.play(ctx=ctx, args=args)
-         print("Song Name: ", args)
-
+        music_instance = Music(bot)  # Create an instance of the Music class
+        await music_instance.play(ctx=ctx, args=args)  # Call the play method on the instance
+        print("Song Name: ", args)
      except Exception as e:
-        await error_embed(ctx, e)
-
+        print("An error occurred:", e)
     async def error_embed(ctx, e):
      # Create an error embed after catching the exception
      error_embed = discord.Embed(

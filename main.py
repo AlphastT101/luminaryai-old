@@ -147,6 +147,6 @@ async def main():
 
         # Create the AsyncIOMotorClient with the MongoDB URI and SSL context
         bot.mongoConnect = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URI"),ssl=True)
-        await bot.start(os.getenv('BOT_TOKEN'))
+        await bot.start('MTE3NzY3MDAwMTcwMDkwOTA4Ng.GcuVZP.BRtzr75l59PIyVQDvQchgNfrJPAZGM1M1KiXoY')
 
 asyncio.run(main())
