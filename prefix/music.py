@@ -122,8 +122,7 @@ class Music(commands.Cog):
     if not query.startswith("https://"):  # Search and Choose | By Number
       embed = discord.Embed(
           title="Song Selection",
-          color=discord.Color.blue(
-          )  # ctx.guild.get_member(self.bot.user.id).color
+          color=0xFF0000  # ctx.guild.get_member(self.bot.user.id).color
       )
 
       embed.set_thumbnail(url=self.bot.user.avatar.url)
@@ -247,10 +246,10 @@ class Music(commands.Cog):
 
         self.voice_client = await self.voice_client.disconnect()
   
-  def get_next_song(self):
+  async def get_next_song(self):
         if len(self.music_queue) > 1:
             # Return the second song in the queue (index 1)
-            return self.music_queue[1]
+            return self.music_queue[self.current_song_index + 1] if self.current_song_index + 1 < len(self.music_queue) else None
         else:
             return None
 
@@ -262,14 +261,16 @@ class Music(commands.Cog):
             return
 
         # Get information about the next song
-        next_song = self.get_next_song()
+        next_song = await self.get_next_song()
+
         next_song_title = next_song['title'] if next_song else "No upcoming songs"
 
         # Design your embed here
         embed = discord.Embed(
             title=f"Now Playing:",
             description=f"```{self.current_song['title']}```",
-            color=discord.Color.from_rgb(255, 192, 203)  # Light Pink color
+            color=0xFF0000,
+            timestamp=datetime.now()
 
         )
 
@@ -310,7 +311,7 @@ class Music(commands.Cog):
         embed = discord.Embed(
             title="Now Playing",
             description=f"```{current_song_title}```",
-            color=discord.Color.green()  # Adjust color to match your bot theme
+            color=0xFF0000  # Adjust color to match your bot theme
         )
 
         embed.set_image(url=self.current_song['thumbnail_url'])
@@ -400,7 +401,7 @@ class Music(commands.Cog):
         # Design your queue list embed here
         embed = discord.Embed(
             title="Music Queue",
-            color=discord.Color.blue()  # Adjust color to match your bot theme
+            color=0xFF0000  # Adjust color to match your bot theme
         )
 
         # Add fields for each upcoming song
@@ -455,7 +456,7 @@ class MusicButton(discord.ui.View):
         embed = discord.Embed(
             title="Now Playing",
             description=f"```{self.current_song['title']}```",
-            color=discord.Color.green()  # Adjust color to match your bot theme
+            color=0xFF0000  # Adjust color to match your bot theme
         )
 
         embed.set_image(url=self.current_song['thumbnail_url'])
