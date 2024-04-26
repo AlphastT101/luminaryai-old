@@ -1,8 +1,9 @@
-import yt_dlp as youtube_dl
 from discord.ext import commands
 import discord
 import pyshorteners
 import asyncio
+from asyncio import Lock
+
 # Assign Task
 import time
 import random
@@ -27,8 +28,10 @@ class Music(commands.Cog):
     self.current_song = None
     self.current_song_index = -1
     self.repeat = False
-
     self.voice_client = None
+    self.play_lock = Lock()
+
+
 
   @commands.Cog.listener()
   async def on_ready(self):
@@ -91,13 +94,22 @@ class Music(commands.Cog):
   async def play(self, ctx, *, args):
     """Plays a song from youtube"""
     if not ctx.author.voice:
-      await ctx.send("You are not in a voice channel!")
+        await ctx.send("You are not in a voice channel!")
+        return
 
-
-    if self.voice_client is None:
-       self.voice_client = await ctx.author.voice.channel.connect()
-
-
+    try:
+        # Check if the bot is already connected to a voice channel
+        if self.voice_client is not None and self.voice_client.is_connected():
+            # Check if the bot is in the same voice channel as the command invoker
+            if self.voice_client.channel != ctx.author.voice.channel:
+                # Move the bot to the voice channel of the command invoker
+                await self.voice_client.move_to(ctx.author.voice.channel)
+        else:
+            # Connect to the voice channel
+            self.voice_client = await ctx.author.voice.channel.connect()
+    except discord.ClientException as e:
+        # Handle the "Already connected to a voice channel" error
+        pass
 
     # Search the song
     query = " ".join(args)
@@ -122,7 +134,7 @@ class Music(commands.Cog):
     if not query.startswith("https://"):  # Search and Choose | By Number
       embed = discord.Embed(
           title="Song Selection",
-          color=0xFF0000  # ctx.guild.get_member(self.bot.user.id).color
+          color=0x99ccff  # ctx.guild.get_member(self.bot.user.id).color
       )
 
       embed.set_thumbnail(url=self.bot.user.avatar.url)
@@ -269,7 +281,7 @@ class Music(commands.Cog):
         embed = discord.Embed(
             title=f"Now Playing:",
             description=f"```{self.current_song['title']}```",
-            color=0xFF0000,
+            color=0x99ccff,
             timestamp=datetime.now()
 
         )
@@ -401,7 +413,7 @@ class Music(commands.Cog):
         # Design your queue list embed here
         embed = discord.Embed(
             title="Music Queue",
-            color=0xFF0000  # Adjust color to match your bot theme
+            color=0x99ccff  # Adjust color to match your bot theme
         )
 
         # Add fields for each upcoming song
@@ -456,7 +468,7 @@ class MusicButton(discord.ui.View):
         embed = discord.Embed(
             title="Now Playing",
             description=f"```{self.current_song['title']}```",
-            color=0xFF0000  # Adjust color to match your bot theme
+            color=0x99ccff  # Adjust color to match your bot theme
         )
 
         embed.set_image(url=self.current_song['thumbnail_url'])
