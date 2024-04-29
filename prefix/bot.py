@@ -33,6 +33,81 @@ ram_text = f"{ram_percent:.0f}% of {total_ram_gb:.0f}GB ({total_ram_gb * ram_per
 
 def bbot(bot, developer_members, start_time, blacklisted_servers, member_histories_msg, ai_channels, server_data_ai, blacklisted_users):
 
+    @bot.command(name="ping")
+    async def ping(ctx):
+        wait = await ctx.send("**Please wait while I calculate my latency.**")
+        latency_ms = round(bot.latency * 1000)
+        await wait.edit(content=f'**Pong! My Latency is `{latency_ms}ms`.**')
+
+    @bot.command(name="server")
+    async def list_guilds(ctx):
+        """Lists all the guilds the bot is in along with their IDs."""
+        guilds = ctx.bot.guilds
+        per_page = 15  # Number of guilds to display per page
+        total_pages = (len(guilds) + per_page - 1) // per_page  # Calculate total pages
+        pages = []
+        for i in range(0, len(guilds), per_page):
+            page = "\n".join([f"{guild.name} - `{guild.id}`" for guild in guilds[i:i + per_page]])
+            pages.append(page)
+        current_page = 0
+
+        async def update_message(interaction):
+            embed = discord.Embed(title="Guilds List", color=discord.Color.blue())
+            embed.description = pages[current_page]
+            embed.set_footer(text=f"Page {current_page + 1}/{total_pages}")
+
+            # Disable buttons as needed
+            previous_button.disabled = current_page == 0
+            next_button.disabled = current_page == total_pages - 1
+
+            await interaction.response.defer()
+            await interaction.message.edit(embed=embed, view=view)
+
+        async def previous_callback(interaction):
+            nonlocal current_page
+            if current_page > 0:
+                current_page -= 1
+                await update_message(interaction)
+
+        async def next_callback(interaction):
+            nonlocal current_page
+            if current_page < len(pages) - 1:
+                current_page += 1
+                await update_message(interaction)
+
+        async def stop_callback(interaction):
+            await paginator_message.edit(embed=initial_embed, view=None)
+            view.stop()
+
+        async def on_timeout():
+            await paginator_message.edit(embed=initial_embed, view=None)
+            view.stop()
+
+        initial_embed = discord.Embed(title="Guilds List", color=discord.Color.blue())
+        initial_embed.description = pages[current_page]
+        initial_embed.set_footer(text=f"Page {current_page + 1}/{total_pages}")
+
+        previous_button = discord.ui.Button(label="⬅️", style=discord.ButtonStyle.primary)
+        next_button = discord.ui.Button(label="➡️", style=discord.ButtonStyle.primary)
+        stop_button = discord.ui.Button(label="❌", style=discord.ButtonStyle.danger)
+
+        view = discord.ui.View(timeout=20)
+        view.add_item(previous_button)
+        view.add_item(next_button)
+        view.add_item(stop_button)
+
+
+
+        
+        # Disable buttons initially for first page
+        previous_button.disabled = True
+        paginator_message = await ctx.send(embed=initial_embed, view=view)
+
+        previous_button.callback = previous_callback
+        next_button.callback = next_callback
+        stop_button.callback = stop_callback
+
+        view.timeout_callback = on_timeout
     ####### return message ######
     @bot.command(name="say")
     async def m(ctx, *, message: str = None):
