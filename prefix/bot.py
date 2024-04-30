@@ -7,8 +7,6 @@ import psutil
 import io
 import contextlib
 
-import button_paginator as pg
-# from button_paginator import PaginatorView
 
 
 def get_cpu_usage():
