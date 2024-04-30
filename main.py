@@ -26,7 +26,6 @@ bot_token = sys.argv[1]
 
 
 
-
 developer_members = {}
 intents = discord.Intents.all()
 intents.presences = False
