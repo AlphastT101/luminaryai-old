@@ -1,22 +1,16 @@
 import aiohttp
 import io
 from datetime import datetime
-import re
-import asyncio
-import time
 import random
-import asyncio
 from urllib.parse import quote
 import datetime
 from openai import AsyncOpenAI
-import os
-from dotenv import load_dotenv
 import requests
+import sys
 
+GPT_MODEL = sys.argv[2]
+GPT_KEY = sys.argv[3]
 
-
-load_dotenv()
-GPT_KEY = os.getenv('GPT_KEY')
 
 openai_client = AsyncOpenAI(
     api_key = GPT_KEY,
@@ -32,53 +26,7 @@ async def sdxl(prompt):
     )
     return response.data[0].url
 
-# async def search(prompt):
-#     """
-#     Asynchronously searches for a prompt and returns the search results as a blob.
 
-#     Args:
-#         prompt (str): The prompt to search for.
-
-#     Returns:
-#         str: The search results as a blob.
-
-#     Raises:
-#         None
-#     """
-#     if not internet_access or len(prompt) > 200:
-#         return
-#     search_results_limit = config['MAX_SEARCH_RESULTS']
-
-#     if url_match := re.search(r'(https?://\S+)', prompt):
-#         search_query = url_match.group(0)
-#     else:
-#         search_query = prompt
-
-#     if search_query is not None and len(search_query) > 200:
-#         return
-
-#     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-#     blob = f"Search results for: '{search_query}' at {current_time}:\n"
-#     if search_query is not None:
-#         try:
-#             async with aiohttp.ClientSession() as session:
-#                 async with session.get('https://ddg-api.awam.repl.co/api/search',
-#                                        params={'query': search_query, 'maxNumResults': search_results_limit}) as response:
-#                     search = await response.json()
-#         except aiohttp.ClientError as e:
-#             print(f"An error occurred during the search request: {e}")
-#             return
-
-#         for index, result in enumerate(search):
-#             try:
-#                 blob += f'[{index}] "{result["Snippet"]}"\n\nURL: {result["Link"]}\n'
-#             except Exception as e:
-#                 blob += f'Search error: {e}\n'
-#             blob += "\n\n"
-#         return blob
-#     else:
-#         blob = ""
-#     return blob
 
 def fetch_chat_models():
     models = []
@@ -126,7 +74,7 @@ async def generate_response_cmd(ctx, user_input, history=[]):
 
     # Asynchronously generate a response using OpenAI Chat API
     response = await openai_client.chat.completions.create(
-        model=os.getenv('GPT_MODEL'),
+        model=GPT_MODEL,
         messages=messages
     )
 
@@ -169,7 +117,7 @@ async def generate_response_msg(message, user_input, history=[]):
 
     # Asynchronously generate a response using OpenAI Chat API
     response = await openai_client.chat.completions.create(
-        model=os.getenv('GPT_MODEL'),
+        model=GPT_MODEL,
         messages=messages
     )
 

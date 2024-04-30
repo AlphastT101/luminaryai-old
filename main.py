@@ -1,13 +1,9 @@
 import discord
 from discord.ext import commands, tasks
-# from aiml import Kernel
-# import inspect
-# import requests
-# import yaml
 from data import blacklisted_servers, member_histories_msg, blacklisted_users
 from bot_utilities.ai_utils import fetch_chat_models
-from dotenv import load_dotenv
 import os
+import sys
 
 
 from slash.bot import *
@@ -25,18 +21,23 @@ from events.on_messages import *
 from events.member_join import *
 
 
+bot_token = sys.argv[1]
+
+
+
+
 
 developer_members = {}
 intents = discord.Intents.all()
 intents.presences = False
-activity = discord.Game(name="ai.help")
+activity = discord.Game(name="/help")
 bot = commands.Bot(command_prefix="ai.", intents=intents, activity=activity, help_command=None, reconnect=False)
 
 
 
 start_time = time.time()
 
-load_dotenv()
+
 
 bbot(bot,
     developer_members,
@@ -131,4 +132,4 @@ async def on_guild_remove(guild):
 
 
 
-bot.run(os.getenv('BOT_TOKEN'))
+bot.run(bot_token)

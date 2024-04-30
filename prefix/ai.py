@@ -5,20 +5,12 @@ import random
 from bot_utilities.ai_utils import generate_response_cmd, poly_image_gen, generate_image_prodia, sdxl, search_photo, web_search
 import aiohttp
 from data import ai_channels, server_data_ai
-# from openai import AsyncOpenAI
-# from dotenv import load_dotenv
-# from bot_utilities.config_loader import load_current_language, config
-# import os
-# import requests
-# from urllib.parse import quote
+
 
 
 async def embed(ctx ,title, description, color):
     embed = discord.Embed(title=title, description=description, color=color)
     await ctx.send(embed=embed)
-
-
-
 
 
 
