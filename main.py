@@ -105,6 +105,24 @@ async def send_data_file():
     file = discord.File("data.py", filename="data.py")
     await channel.send(file=file)
 
+
+bio = """
+Smart AI bot packed with features on Discord.
+
+Site: https://luminaryai.netlify.app
+Support: https://discord.com/invite/hmMBe8YyJ4
+TOS: https://luminaryai.netlify.app/tos
+"""
+
+@tasks.loop(seconds=30)
+async def update_bio():
+    # Update the description via PATCH request
+    url = "https://discord.com/api/v9/applications/@me"
+    headers = {"Authorization": f"Bot {bot_token}"}
+    data = {"description": bio}
+    response = requests.patch(url=url, headers=headers, json=data)
+
+
 @bot.event
 async def on_ready():
     await bot.tree.sync()
@@ -112,9 +130,10 @@ async def on_ready():
     print(f'We have logged in as {bot.user}')
     print(f"\033[1;38;5;202mAvailable models: {model_blob}\033[0m")
     print(f"\033[1;38;5;46mCurrent model: {os.getenv('GPT_MODEL')}\033[0m")
-    # save_data.start()
-    # sync_slash_cmd.start()
-    # await send_data_file.start()
+    save_data.start()
+    sync_slash_cmd.start()
+    await send_data_file.start()
+    await update_bio.start()
 
 
 @bot.event
