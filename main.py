@@ -132,8 +132,8 @@ async def on_ready():
     print(f"\033[1;38;5;46mCurrent model: {os.getenv('GPT_MODEL')}\033[0m")
     save_data.start()
     sync_slash_cmd.start()
-    await send_data_file.start()
-    await update_bio.start()
+    send_data_file.start()
+    update_bio.start()
 
 
 @bot.event
