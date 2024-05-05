@@ -110,7 +110,7 @@ bio = """
 Smart AI bot packed with features on Discord.
 
 Site: https://luminaryai.netlify.app
-Support: https://discord.com/invite/hmMBe8YyJ4
+Support: https://discord.gg/hmMBe8YyJ4
 TOS: https://luminaryai.netlify.app/tos
 """
 
@@ -132,8 +132,8 @@ async def on_ready():
     print(f"\033[1;38;5;46mCurrent model: {os.getenv('GPT_MODEL')}\033[0m")
     save_data.start()
     sync_slash_cmd.start()
-    send_data_file.start()
     update_bio.start()
+    send_data_file.start()
 
 
 @bot.event
