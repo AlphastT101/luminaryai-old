@@ -63,7 +63,7 @@ def ai_slash(bot):
         sampler="Sampler for denosing",
     )
     async def imagine(interaction:discord.Interaction, prompt: str, model: app_commands.Choice[str], sampler: app_commands.Choice[str], seed: int = None):
-        if interaction.guild.id in blacklisted_servers or interaction.author.id in blacklisted_users:
+        if interaction.guild.id in blacklisted_servers or interaction.user.id in blacklisted_users:
             return
         for word in prompt.split():
             is_nsfw = word in blacklisted_words

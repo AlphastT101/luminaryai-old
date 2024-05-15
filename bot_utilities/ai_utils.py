@@ -28,6 +28,7 @@ async def sdxl(prompt):
 
 
 
+
 def fetch_chat_models():
     models = []
     headers = {

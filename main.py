@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands, tasks
-from data import blacklisted_servers, member_histories_msg, blacklisted_users
+from data import blacklisted_servers, blacklisted_users
 from bot_utilities.ai_utils import fetch_chat_models
 import os
 import sys
@@ -22,7 +22,7 @@ from events.member_join import *
 
 
 bot_token = sys.argv[1]
-
+member_histories_msg = {}
 
 
 
@@ -52,7 +52,6 @@ fun(bot)
 general(bot, developer_members)
 ai(bot, member_histories_msg)
 moderation(bot)
-
 
 bot_slash(bot, start_time)
 ai_slash(bot)
@@ -90,7 +89,7 @@ on_messages(bot, cmd_list, blacklisted_users, member_histories_msg, blacklisted_
 async def save_data():
     with open("data.py", "w") as file:
         # Write the content with the provided variable
-        file.write(f"blacklisted_servers = {blacklisted_servers}\nblacklisted_users = {blacklisted_users}\n\nmember_histories_msg = {member_histories_msg}\n\nserver_data_ai = {server_data_ai}\nai_channels = {ai_channels}")
+        file.write(f"blacklisted_servers = {blacklisted_servers}\nblacklisted_users = {blacklisted_users}\n\nserver_data_ai = {server_data_ai}\nai_channels = {ai_channels}")
         file.close()
 
 @tasks.loop(seconds=300) # keep the slash commands synced
@@ -102,6 +101,8 @@ async def sync_slash_cmd():
 async def send_data_file():
     # Task to run every 8 minutes (480 seconds)
     channel = bot.get_channel(1227153352228601877)
+
+    await channel.purge(limit=20)
     file = discord.File("data.py", filename="data.py")
     await channel.send(file=file)
 
