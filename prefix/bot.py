@@ -37,11 +37,6 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
         latency_ms = round(bot.latency * 1000)
         await wait.edit(content=f'**Pong! My Latency is `{latency_ms}ms`.**')
 
-    @bot.command(name="ping")
-    async def ping(ctx):
-        wait = await ctx.send("**Please wait while I calculate my latency.**")
-        latency_ms = round(bot.latency * 1000)
-        await wait.edit(content=f'**Pong! My Latency is `{latency_ms}ms`.**')
 
     @bot.command(name="server")
     async def list_guilds(ctx):
