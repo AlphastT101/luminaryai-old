@@ -100,7 +100,7 @@ async def sync_slash_cmd():
 @tasks.loop(seconds=480)
 async def send_data_file():
     # Task to run every 8 minutes (480 seconds)
-    channel = bot.get_channel(1227153352228601877)
+    channel = bot.get_channel(1240274916712906822)
 
     await channel.purge(limit=20)
     file = discord.File("data.py", filename="data.py")
