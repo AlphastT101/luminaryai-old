@@ -54,7 +54,7 @@ async def generate_response_cmd(ctx, user_input, history=[]):
     system_message = {
         "role": "system",
         "name": "LuminaryAI",
-        "content": "AlphasT101 is my owner. I am powered by an AI engine created by AlphasT101 called Luminary . AlphasT101 is a programmer and developer. alphast101 lives in the USA. I am an AI language model created by AlphasT101. Today's date is {datetime.date.today()}.",
+        "content": "AlphasT101 is my owner. I am powered by an AI engine created by AlphasT101 called Luminary . AlphasT101 is a programmer and developer. alphast101 lives in Japan/Tokyo. I am an AI language model created by AlphasT101. Today's date is {datetime.date.today()}.",
     }
 
     # Extract relevant member information
@@ -97,7 +97,7 @@ async def generate_response_msg(message, user_input, history=[]):
     system_message = {
         "role": "system",
         "name": "LuminaryAI",
-        "content": f"AlphasT101 is my owner. I am powered by an AI engine created by AlphasT101 called Luminary . AlphasT101 is a programmer and developer. alphast101 lives in the USA. I am an AI language model created by AlphasT101. Today's date is {datetime.date.today()}.",
+        "content": f"AlphasT101 is my owner. I am powered by an AI engine created by AlphasT101 called Luminary . AlphasT101 is a programmer and developer. alphast101 lives in Japan/Tokyo. I am an AI language model created by AlphasT101. Today's date is {datetime.date.today()}.",
     }
 
     # Extract relevant member information
