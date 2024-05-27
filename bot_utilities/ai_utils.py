@@ -1,16 +1,21 @@
 import aiohttp
 import io
-from datetime import datetime
 import random
 from urllib.parse import quote
-import datetime
 from openai import AsyncOpenAI
 import requests
 import sys
+import asyncio
+from bot_utilities.prompt_sys import prompt
+import yaml
 
-GPT_MODEL = sys.argv[2]
-GPT_KEY = sys.argv[3]
 
+with open("config.yml", "r") as config_file:
+    config = yaml.safe_load(config_file)
+GPT_KEY = sys.argv[2]
+GPT_MODEL = config["bot"]["text_model"]
+image_model = config["bot"]["image_model"]
+request_queue = asyncio.Queue()
 
 openai_client = AsyncOpenAI(
     api_key = GPT_KEY,
@@ -19,7 +24,7 @@ openai_client = AsyncOpenAI(
 
 async def sdxl(prompt):
     response = await openai_client.images.generate(
-        model="playground-v2.5",
+        model=image_model,
         prompt=prompt,
         n=1,  # images count
         size="4096x4096"
@@ -46,46 +51,32 @@ def fetch_chat_models():
         )
     else:
         print(f"Failed to fetch chat models. Status code: {response.status_code}")
-
     return models
     
 async def generate_response_cmd(ctx, user_input, history=[]):
-    # Create a system message with combined instructions
+
     system_message = {
         "role": "system",
         "name": "LuminaryAI",
-        "content": "AlphasT101 is my owner. I am powered by an AI engine created by AlphasT101 called Luminary . AlphasT101 is a programmer and developer. alphast101 lives in Japan/Tokyo. I am an AI language model created by AlphasT101. Today's date is {datetime.date.today()}.",
+        "content": prompt,
     }
 
-    # Extract relevant member information
     member_info = {
         "id": str(ctx.author.id),
         "name": str(ctx.author),
-        # Add any other relevant member information
     }
 
-    # User message with only the member ID
     user_message = {"role": "user", "name": member_info["name"], "content": user_input}
-
-    # Add user message to history
     history.append(user_message)
 
-    # Other messages in the conversation history
     messages = [system_message, *history]
-
-    # Asynchronously generate a response using OpenAI Chat API
     response = await openai_client.chat.completions.create(
         model=GPT_MODEL,
         messages=messages
     )
 
-    # Extract and return the generated message content
     generated_message = response.choices[0].message.content
-
-    # Bot message
     bot_message = {"role": "system", "name": "LuminaryAI", "content": generated_message}
-
-    # Add bot message to history
     history.append(bot_message)
 
     return generated_message, history
@@ -93,46 +84,42 @@ async def generate_response_cmd(ctx, user_input, history=[]):
 
 
 async def generate_response_msg(message, user_input, history=[]):
-    # Create a system message with combined instructions
     system_message = {
         "role": "system",
         "name": "LuminaryAI",
-        "content": f"AlphasT101 is my owner. I am powered by an AI engine created by AlphasT101 called Luminary . AlphasT101 is a programmer and developer. alphast101 lives in Japan/Tokyo. I am an AI language model created by AlphasT101. Today's date is {datetime.date.today()}.",
+        "content": prompt,
     }
-
-    # Extract relevant member information
     member_info = {
         "id": str(message.author.id),
         "name": str(message.author),
-        # Add any other relevant member information
     }
-
-    # User message with only the member ID
     user_message = {"role": "user", "name": member_info["id"], "content": user_input}
-
-    # Add user message to history
     history.append(user_message)
-
-    # Other messages in the conversation history
     messages = [system_message, *history]
+    await request_queue.put((messages, history))
 
-    # Asynchronously generate a response using OpenAI Chat API
     response = await openai_client.chat.completions.create(
         model=GPT_MODEL,
         messages=messages
     )
-
-    # Extract and return the generated message content
     generated_message = response.choices[0].message.content
-
-    # Bot message
     bot_message = {"role": "system", "name": "LuminaryAI", "content": generated_message}
 
-    # Add bot message to history
     history.append(bot_message)
-
     return generated_message, history
 
+
+async def process_queue():
+    while True:
+        messages, history = await request_queue.get()
+        response = await openai_client.chat.completions.create(
+            model=GPT_MODEL,
+            messages=messages
+        )
+        generated_message = response.choices[0].message.content
+        bot_message = {"role": "system", "name": "LuminaryAI", "content": generated_message}
+        history.append(bot_message)
+        request_queue.task_done()
 
 
 

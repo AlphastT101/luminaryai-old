@@ -2,7 +2,6 @@ aiohttp
 asyncio
 discord.py
 requests
-flask
 discord
 python-dotenv
 PyYAML
@@ -19,4 +18,3 @@ openai
 PyNaCl
 psutil
 geopy
-werkzeug>=3.0.1

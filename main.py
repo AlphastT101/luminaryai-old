@@ -1,10 +1,12 @@
 import discord
 from discord.ext import commands, tasks
-from data import blacklisted_servers, blacklisted_users
 from bot_utilities.ai_utils import fetch_chat_models
+from bot_utilities.ai_utils import process_queue
 import os
 import sys
-
+from pymongo.mongo_client import MongoClient
+import yaml
+import asyncio
 
 from slash.bot import *
 from slash.ai import *
@@ -22,34 +24,28 @@ from events.member_join import *
 
 
 bot_token = sys.argv[1]
+mongodb = sys.argv[3]
 member_histories_msg = {}
+with open("config.yml", "r") as config_file:
+    config = yaml.safe_load(config_file)
 
 
-
-developer_members = {}
 intents = discord.Intents.all()
 intents.presences = False
 activity = discord.Game(name="/help")
-bot = commands.Bot(command_prefix="ai.", intents=intents, activity=activity, help_command=None, reconnect=False)
-
-
-
+bot = commands.Bot(command_prefix=config["bot"]["prefix"], intents=intents, activity=activity, help_command=None, reconnect=False)
+client = MongoClient(mongodb)
 start_time = time.time()
 
 
 
 bbot(bot,
-    developer_members,
     start_time,
-    blacklisted_servers,
-    member_histories_msg,
-    ai_channels,
-    server_data_ai,
-    blacklisted_users
+    client
 )
 music(bot)
 fun(bot)
-general(bot, developer_members)
+general(bot)
 ai(bot, member_histories_msg)
 moderation(bot)
 
@@ -61,8 +57,6 @@ member_join(bot)
 
 chat_models = fetch_chat_models()
 model_blob = "\n".join(chat_models)
-
-
 
 
 @bot.command(name="cmd")
@@ -78,7 +72,7 @@ for command in bot.commands:
     cmd_prefix = "ai." + command.name
     cmd_list.append(cmd_prefix)
 
-on_messages(bot, cmd_list, blacklisted_users, member_histories_msg, blacklisted_servers)
+on_messages(bot, cmd_list, member_histories_msg, client)
 
 
 
@@ -131,10 +125,14 @@ async def on_ready():
     print(f'We have logged in as {bot.user}')
     print(f"\033[1;38;5;202mAvailable models: {model_blob}\033[0m")
     print(f"\033[1;38;5;46mCurrent model: {os.getenv('GPT_MODEL')}\033[0m")
+    client.admin.command('ping')
+    print("Pinged your deployment. You successfully connected to MongoDB!")
     save_data.start()
     sync_slash_cmd.start()
     update_bio.start()
-    send_data_file.start()
+    asyncio.create_task(process_queue())
+    if bot.user.id == 1110111253256482826:
+        send_data_file.start()
 
 
 @bot.event

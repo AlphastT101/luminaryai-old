@@ -6,7 +6,7 @@ import time
 import psutil
 import io
 import contextlib
-
+from bot_utilities.owner_utils import *
 
 
 def get_cpu_usage():
@@ -29,7 +29,7 @@ ram_text = f"{ram_percent:.0f}% of {total_ram_gb:.0f}GB ({total_ram_gb * ram_per
 
 
 
-def bbot(bot, developer_members, start_time, blacklisted_servers, member_histories_msg, ai_channels, server_data_ai, blacklisted_users):
+def bbot(bot, start_time, mongodb):
 
     @bot.command(name="ping")
     async def ping(ctx):
@@ -113,13 +113,12 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
     ####### return message ######
     @bot.command(name="say")
     async def m(ctx, *, message: str = None):
-        # 900436346420732065 - toast
 		# 1026388699203772477 - alphast101
 		# 973461136680845382 - wqypp
         # 885977942776246293 -jeydalio
         if message is None:
             return
-        allowed = [973461136680845382, 1026388699203772477, 900436346420732065, 885977942776246293]
+        allowed = [973461136680845382, 1026388699203772477, 885977942776246293]
         if ctx.author.id in allowed:
             bot_member = ctx.guild.me
             if bot_member.guild_permissions.manage_messages:
@@ -136,33 +135,6 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
             print(message)
             await ctx.message.delete()
             await ctx.send(message)
-        else:
-            await ctx.send("**This command is restricted**", delete_after=3)
-
-    @bot.command(name="serverinv")
-    async def list_serversinv(ctx):
-        if ctx.author.id == 1026388699203772477:
-            servers = bot.guilds
-
-            if not servers:
-                await ctx.send("The bot is not a member of any servers.")
-                return
-
-            embed = discord.Embed(
-                title="Server List",
-                color=0x99ccff
-            )
-
-            for server in servers:
-                try:
-                    invite = await server.text_channels[0].create_invite()
-                    embed.add_field(name=server.name, value=f"Invite: {invite}", inline=False)
-                except discord.errors.Forbidden:
-                    embed.add_field(name=server.name, value="Unable to create invite (missing permissions)", inline=False)
-
-            await ctx.send(embed=embed)
-        else:
-            await ctx.send("**This command is restricted**", delete_after=3)
 
 
     @bot.command(name="sync")
@@ -171,100 +143,67 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
             await ctx.send("**<@1026388699203772477> Syncing slash commands...**")
             await bot.tree.sync()
             await ctx.send("**<@1026388699203772477> Slash commands synced!**")
-        else:
-            return
-
-    @bot.command(name="blacklist.server")
-    async def blacklist_server(ctx, *, serverid):
-        guild = bot.get_guild(int(serverid))  # Convert serverid to integer
-
-        if ctx.author.id == 1026388699203772477:
-            if guild:  # Check if guild is found
-                if int(serverid) not in blacklisted_servers:
-                    blacklisted_servers.append(int(serverid))
-                    await ctx.send(f"**`{guild.name}` has been blacklisted!**")
-                else:
-                    await ctx.send("**This server is already blacklisted!**")
-            else:
-                await ctx.send("**Guild not found!**")
-        else:
-            return
-
-    @bot.command(name="unblacklist.server")
-    async def ublacklist_server(ctx, *, serverid):
-        guild = bot.get_guild(int(serverid))  # Convert serverid to integer
-
-        if ctx.author.id == 1026388699203772477:
-            if guild:  # Check if guild is found
-                if int(serverid) in blacklisted_servers:
-                    blacklisted_servers.remove(int(serverid))
-                    await ctx.send(f"**`{guild.name}` has been unblacklisted!**")
-                else:
-                    await ctx.send("**This server is not blacklisted!**")
-            else:
-                await ctx.send("**Guild not found!**")
-        else:
-            return
 
 
-    @bot.command(name="blacklist.user")
-    async def blacklist_user(ctx, *, userid):
-        user = bot.get_user(int(userid))  # Convert userid to integer
-
-        if ctx.author.id == 1026388699203772477:
-            if user:  # Check if guild is found
-                if int(userid) not in blacklisted_users:
-                    blacklisted_users.append(int(userid))
-                    await ctx.send(f"**`{user.name}` has been blacklisted!**")
-                else:
-                    await ctx.send("**This user is already blacklisted!**")
-            else:
-                await ctx.send("**user not found!**")
-        else:
-            return
-    @bot.command(name="unblacklist.user")
-    async def ublacklist_user(ctx, *, userid):
-        user = bot.get_user(int(userid))  # Convert userid to integer
-
-        if ctx.author.id == 1026388699203772477:
-            if user:  # Check if guild is found
-                if int(userid) in blacklisted_users:
-                    blacklisted_users.remove(int(userid))
-                    await ctx.send(f"**`{user.name}` has been unblacklisted!**")
-                else:
-                    await ctx.send("**This user is not blacklisted!**")
-            else:
-                await ctx.send("**user not found!**")
-        else:
-            return
-
-    @bot.command(name="save")
-    async def save(ctx):
-        if ctx.author.id == 1026388699203772477:
-            # Open the "data.py" file in write mode
-
-            with open("data.py", "w") as file:
-                # Write the content with the provided variable
-                file.write(f"blacklisted_servers = {blacklisted_servers}\nblacklisted_users = {blacklisted_users}\n\nmember_histories_msg = {member_histories_msg}\n\nserver_data_ai = {server_data_ai}\nai_channels = {ai_channels}")
-                file.close()
-            await ctx.send("**Data saved successfully!**")
-        else:
-            return
         
-    @bot.command(name="developer")
-    @commands.cooldown(1, 10, commands.BucketType.user)
-    async def developer(ctx, choice: str):
-        # Check if developer mode is enabled for the user
-        developer_mode = ctx.author.id in developer_members and developer_members[ctx.author.id]
+    @bot.command(name="blist")
+    async def blist(ctx, object, id = None):
+        if ctx.author.id != 1026388699203772477:
+            return
 
-        if choice.lower() == "true":
-            developer_members[ctx.author.id] = True
-            await ctx.send(f"Developer mode enabled for {ctx.author}")
-        elif choice.lower() == "false":
-            developer_members[ctx.author.id] = False
-            await ctx.send(f"Developer mode disabled for {ctx.author}")
+        try:
+            id = int(id)
+        except TypeError:
+            await ctx.send("Invalid Command or ID")
+            return
+
+        if object == "server":
+            guild = bot.get_guild(id)
+            if guild:
+                insert = await insertdb('blist-servers', id, mongodb)
+                await ctx.send(f"**{guild} is {insert}.**")
+            else:
+                await ctx.send(f"**Guild not found, `{guild}`**")
+
+        elif object == 'user':
+            user = bot.get_user(id)
+            if user:
+                insert = await insertdb('blist-users', id, mongodb)
+                await ctx.send(f"**{user} is {insert}**")
+            else:
+                await ctx.send(f"**User not found, `{user}`**")
         else:
-            await ctx.send("Invalid choice.")
+            await ctx.send(f"Invalid object")
+
+    @bot.command(name="unblist")
+    async def unblist(ctx, object, id = None):
+        if ctx.author.id != 1026388699203772477:
+            return
+
+        try:
+            id = int(id)
+        except TypeError:
+            await ctx.send("Invalid Command or ID")
+            return
+
+        if object == "server":
+            guild = bot.get_guild(id)
+            if guild:
+                insert = await deletedb('blist-servers', id, mongodb)
+                await ctx.send(f"**{guild} is {insert}.**")
+            else:
+                await ctx.send(f"**Guild not found, `{guild}`**")
+
+        elif object == 'user':
+            user = bot.get_user(id)
+            if user:
+                insert = await deletedb('blist-users', id, mongodb)
+                await ctx.send(f"**{user} is {insert}**")
+            else:
+                await ctx.send(f"**User not found, `{user}`**")
+        else:
+            await ctx.send(f"Invalid object")
+
 
 
     @bot.command(name="eval")
