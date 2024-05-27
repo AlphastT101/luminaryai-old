@@ -4,15 +4,32 @@ import random
 from urllib.parse import quote
 from openai import AsyncOpenAI
 import requests
-import sys
+from dotenv import load_dotenv
 import asyncio
 from bot_utilities.prompt_sys import prompt
 import yaml
+from bot_utilities.start_util import *
+
+
+filename_to_encrypt = '.env'
+file_to_save_key = 'binary'
+key_size = 50
+if is_file_encrypted(filename_to_encrypt):
+    key = get_key(file_to_save_key)
+    decrypt_aes(key, filename_to_encrypt)
+    load_dotenv()
+    GPT_KEY = os.getenv('GPT_KEY')
+    new_key = gen_key(file_to_save_key, 50)
+    encrypt_aes(new_key, filename_to_encrypt)
+else:
+    load_dotenv()
+    GPT_KEY = os.getenv('GPT_KEY')
+    new_key = gen_key(file_to_save_key, 50)
+    encrypt_aes(new_key, filename_to_encrypt)
 
 
 with open("config.yml", "r") as config_file:
     config = yaml.safe_load(config_file)
-GPT_KEY = sys.argv[2]
 GPT_MODEL = config["bot"]["text_model"]
 image_model = config["bot"]["image_model"]
 request_queue = asyncio.Queue()

@@ -1,12 +1,10 @@
 import discord
 from discord.ext import commands, tasks
-from bot_utilities.ai_utils import fetch_chat_models
-from bot_utilities.ai_utils import process_queue
 import os
-import sys
 from pymongo.mongo_client import MongoClient
 import yaml
 import asyncio
+from dotenv import load_dotenv
 
 from slash.bot import *
 from slash.ai import *
@@ -22,9 +20,31 @@ from events.on_cmd_error import *
 from events.on_messages import *
 from events.member_join import *
 
+from bot_utilities.ai_utils import fetch_chat_models
+from bot_utilities.ai_utils import process_queue
+from bot_utilities.start_util import *
 
-bot_token = sys.argv[1]
-mongodb = sys.argv[3]
+
+
+filename_to_encrypt = '.env'
+file_to_save_key = 'binary'
+key_size = 50
+if is_file_encrypted(filename_to_encrypt):
+    key = get_key(file_to_save_key)
+    decrypt_aes(key, filename_to_encrypt)
+    load_dotenv()
+    bot_token = os.getenv('BOT_TOKEN')
+    mongodb = os.getenv('MONGODB')
+    new_key = gen_key(file_to_save_key, 50)
+    encrypt_aes(new_key, filename_to_encrypt)
+else:
+    load_dotenv()
+    bot_token = os.getenv('BOT_TOKEN')
+    mongodb = os.getenv('MONGODB')
+    new_key = gen_key(file_to_save_key, 50)
+    encrypt_aes(new_key, filename_to_encrypt)
+
+
 member_histories_msg = {}
 with open("config.yml", "r") as config_file:
     config = yaml.safe_load(config_file)

@@ -17,4 +17,5 @@ pillow
 openai
 PyNaCl
 psutil
+cryptography
 geopy
