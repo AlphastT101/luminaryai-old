@@ -32,15 +32,15 @@ def on_cmd_error(bot):
         # Member not found
         except discord.ext.commands.errors.MemberNotFound:
             await ctx.send(embed=discord.Embed(title="Member not found", colour=0xFF0000), delete_after=10)
-        # except Exception as e:
-                
-        #     line_number = traceback.extract_stack()[-2].lineno
-        #     await ctx.bot.get_channel(error_log_channel_id).send(embed=discord.Embed(title="Ouch! Error!", description=f"`{ctx.author} used '{command_name}' command in {ctx.guild.name} at line {line_number}!`\n\n**Error:** ```bash\n{e}```", color=0xFF0000))
+        except Exception as e:
 
-        #     error_embed = discord.Embed(
-        #         title="LuminaryAI - Error!",
-        #         description=f"An error occurred while executing the '{command_name}' command. Please try again a few moments later.",
-        #         color=0xFF0000
-        #     )
+            line_number = traceback.extract_stack()[-2].lineno
+            await ctx.bot.get_channel(error_log_channel_id).send(embed=discord.Embed(title="Ouch! Error!", description=f"`{ctx.author} used '{command_name}' command in {ctx.guild.name} at line {line_number}!`\n\n**Error:** ```bash\n{e}```", color=0xFF0000))
+
+            error_embed = discord.Embed(
+                title="LuminaryAI - Error!",
+                description=f"An error occurred while executing the '{command_name}' command. Please try again a few moments later.",
+                color=0xFF0000
+            )
             
-        #     await ctx.send(embed=error_embed)
+            await ctx.send(embed=error_embed)

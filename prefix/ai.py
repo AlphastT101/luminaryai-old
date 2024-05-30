@@ -5,8 +5,8 @@ import random
 from bot_utilities.ai_utils import generate_response_cmd, poly_image_gen, generate_image_prodia, sdxl, search_photo, web_search
 import aiohttp
 from data import ai_channels, server_data_ai
-
-
+import datetime
+import json
 
 async def embed(ctx ,title, description, color):
     embed = discord.Embed(title=title, description=description, color=color)
@@ -43,6 +43,7 @@ def ai(bot, member_histories_msg):
                 await ctx.send("Enable 10s slow mode first.")
         else:
             await ctx.send("You don't have permission to use this command.")
+
     @bot.command(name='deactivate')
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def stop(ctx):
@@ -73,25 +74,47 @@ def ai(bot, member_histories_msg):
         history = member_histories_msg.get(member_id, [])
 
         answer_embed = discord.Embed(
-            title="LuminaryAI - answer generation",
-            description="Generating answer...",
-            color=0x99ccff
+            title="LuminaryAI - Loading",
+            description="Plese wait while i process your request.",
+            color=0x99ccff,
+            timestamp=datetime.datetime.now(datetime.timezone.utc)
         )
+        answer_embed.set_footer(text="This may take a few moments", icon_url=bot.user.avatar.url)
         answer = await ctx.reply(embed=answer_embed)
 
         user_input = args
         generated_message, updated_history = await generate_response_cmd(ctx, user_input, history)
-
-        # Update member-specific history
         member_histories_msg[member_id] = updated_history
+        print(generated_message)
 
-        answer_generated = discord.Embed(
-            title="LumianryAI - answer generation",
-            description=generated_message,
-            color=0x99ccff
-        )
-        await answer.edit(embed=answer_generated)
+        try:
+            dicto = json.loads(generated_message)
 
+            answer_generated = discord.Embed(
+                title="LuminaryAI - Response",
+                description=dicto["answer"],
+                color=0x99ccff,
+                timestamp=datetime.datetime.now(datetime.timezone.utc)
+            )
+            answer_generated.set_footer(text="Thanks for using LuminaryAI!", icon_url=bot.user.avatar.url)
+
+            if dicto["image_gen"] == "False":
+                await answer.edit(embed=answer_generated)
+
+            elif dicto["image_gen"] == "True":
+                image_url = await sdxl(dicto["image_gen_prompt"])
+                answer_generated.set_image(url=image_url)
+                await answer.edit(embed=answer_generated)
+
+        except json.decoder.JSONDecodeError:
+            error_embed = discord.Embed(
+                title="LuminaryAI - Reponse",
+                description=generated_message,
+                color=0x99ccff,
+                timestamp=datetime.datetime.now(datetime.timezone.utc)
+            )
+            error_embed.set_footer(text="Thanks for using LuminaryAI!", icon_url=bot.user.avatar.url)
+            await answer.edit(embed=error_embed)
 
 
     @bot.command(name='imagine')
@@ -133,7 +156,7 @@ def ai(bot, member_histories_msg):
     @commands.cooldown(1, 30, commands.BucketType.user)
     async def search(ctx,*, query: str = None):
         if query is None:
-            await embed(ctx, "LuminaryAI - answer generation", "Please enter your prompt", color=0x99ccff)
+            await embed(ctx, "LuminaryAI - Web search", "Please enter your prompt", color=0x99ccff)
             return
         result = web_search(query)
         if result == "":
@@ -143,9 +166,9 @@ def ai(bot, member_histories_msg):
             description=result,
             color=0x99ccff
         )
-        file = discord.File("web_search.png", filename="web_search.png")
+        file = discord.File("images/web_search.png", filename="web_search.png")
         web_embed.set_thumbnail(url="attachment://web_search.png")
-        web_embed.set_footer(text="LumianryAI")
+        web_embed.set_footer(text="Thanks for using LumianryAI!", icon_url=bot.user.avatar.url)
         await ctx.reply(embed=web_embed, file=file)
 
     @bot.command(name='imagine.p')

@@ -311,8 +311,7 @@ def bbot(bot, start_time, mongodb):
         about.add_field(name='RAM usage', value=f"{ram_text}", inline=True)
         about.add_field(name='CPU usage', value=f"{cpu_text}", inline=True)
         about.set_image(url="attachment://ai.png")
-        filename = "ai.png"
-        # Send the embed without the file parameter
+        filename = 'images/ai.png'
         await ctx.send(embed=about, file=discord.File(filename, filename="ai.png"))
 
 

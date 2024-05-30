@@ -75,3 +75,28 @@ async def deletedb(dbname, id, mongodb):
             return "unblacklisted"
         else:
             return "not blacklisted"
+
+
+async def check_blist(ctx, mongodb):
+
+    if ctx.guild is not None:
+        db = mongodb['blacklisted']
+        collection = db['servers']
+        result = collection.find_one({"server_id": int(ctx.guild.id)})
+        if result:
+            server_blist = True
+        else:
+            server_blist = False
+
+    db = mongodb['blacklisted']
+    collection = db['users']
+    result = collection.find_one({"user_id": int(ctx.author.id)})
+    if result:
+        user_blist = True
+    else:
+        user_blist = False
+
+    if user_blist or server_blist:
+        return True
+    else:
+        return False

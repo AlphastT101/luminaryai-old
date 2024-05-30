@@ -137,7 +137,7 @@ def music(bot):
                     description=f"I don't have the following permissions in the voice channel:\n{', '.join(missing_permissions)}",
                     color=0xFF0000
                 )
-                file = discord.File("music.png", filename="thumbnail.png")
+                file = discord.File("images/music.png", filename="thumbnail.png")
                 perms_embed.set_thumbnail(url="attachment://thumbnail.png")
                 await ctx.send(embed=perms_embed, file=file)
                 return
@@ -184,7 +184,7 @@ def music(bot):
             server_loops[server_id] = False
 
 
-        file = discord.File("music.png", filename="thumbnail.png")
+        file = discord.File("images/music.png", filename="thumbnail.png")
         wait = await ctx.send(embed=pls_wait_embed, file=file)
 
         if ctx.author.voice is None or ctx.author.voice.channel is None:
