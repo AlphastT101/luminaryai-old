@@ -104,9 +104,9 @@ async def deletedb(dbname, id, mongodb):
         db = mongodb['ai']
         collection = db['channels']
 
-        result = collection.find_one({"ai_channel": int(id)})
+        result = collection.find_one({"ai_channels": int(id)})
         if result:
-            collection.delete_one({"ai_channel": int(id)})
+            collection.delete_one({"ai_channels": int(id)})
             return "success"
         else:
             return "not found"

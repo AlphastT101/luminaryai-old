@@ -29,10 +29,10 @@ def ai(bot, member_histories_msg, mongodb):
         server_id = ctx.guild.id
 
         if ctx.author.guild_permissions.administrator or ctx.author.id == 1026388699203772477:
-            insert = insert("ai-channels",server_id, mongodb)
-            if insert == "success":
+            insert_result = await insertdb("ai-channels",server_id, mongodb)
+            if insert_result == "success":
                 await ctx.send(embed=Embed(description="Success, now I'll respond to **all messages** in this channel.", color=discord.Colour.green()))
-            elif insert == "already set":
+            elif insert_result == "already set":
                 await ctx.send(embed=Embed(description=":x: **Error**, this channel is already activated.", colour=discord.Colour.red()))
         else:
             await ctx.send(embed=Embed(description="**You don't have permission to use this comamnd.**", color=discord.Color.red()),)
@@ -41,15 +41,15 @@ def ai(bot, member_histories_msg, mongodb):
     @bot.command(name='deactivate')
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def stop(ctx):
-        if ctx.author.id != 1026388699203772477:
-            return
-        server_id = ctx.guild.id
-        if ctx.author.guild_permissions.administrator or ctx.author.id == 1026388699203772477:
-            delete = await deletedb("ai-channels", server_id, mongodb)
 
-            if delete == "success":
+        server_id = ctx.guild.id
+
+        if ctx.author.guild_permissions.administrator or ctx.author.id == 1026388699203772477:
+            delete_result = await deletedb("ai-channels", server_id, mongodb)
+
+            if delete_result == "success":
                 await ctx.send(embed=Embed(description="**Successfully disabled this channel.**", color=discord.Color.green()),)
-            elif delete == "not found":
+            elif delete_result == "not found":
                 await ctx.send(embed=Embed(description=":x: **Error**, this channel isn't activated.", colour=discord.Colour.red()))
         else:
             await ctx.send(embed=Embed(description="**You don't have permission to use this comamnd.**", color=discord.Color.red()),)

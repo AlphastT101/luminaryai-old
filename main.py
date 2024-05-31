@@ -99,12 +99,12 @@ on_messages(bot, cmd_list, member_histories_msg, client)
 
 
 
-@tasks.loop(seconds=60)  # Task to run every 60 seconds
-async def save_data():
-    with open("data.py", "w") as file:
-        # Write the content with the provided variable
-        file.write(f"blacklisted_servers = {blacklisted_servers}\nblacklisted_users = {blacklisted_users}\n\nserver_data_ai = {server_data_ai}\nai_channels = {ai_channels}")
-        file.close()
+# @tasks.loop(seconds=60)  # Task to run every 60 seconds
+# async def save_data():
+#     with open("data.py", "w") as file:
+#         # Write the content with the provided variable
+#         file.write(f"blacklisted_servers = {blacklisted_servers}\nblacklisted_users = {blacklisted_users}\n\nserver_data_ai = {server_data_ai}\nai_channels = {ai_channels}")
+#         file.close()
 
 @tasks.loop(seconds=300) # keep the slash commands synced
 async def sync_slash_cmd():
@@ -147,7 +147,6 @@ async def on_ready():
     print(f"\033[1;38;5;46mCurrent model: {os.getenv('GPT_MODEL')}\033[0m")
     client.admin.command('ping')
     print("Pinged your deployment. You successfully connected to MongoDB!")
-    save_data.start()
     sync_slash_cmd.start()
     update_bio.start()
     asyncio.create_task(process_queue())
