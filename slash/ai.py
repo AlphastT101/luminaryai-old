@@ -2,7 +2,6 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from bot_utilities.ai_utils import vision, sdxl
-from data import blacklisted_servers, blacklisted_users
 import datetime
 
 blacklisted_words = [
@@ -28,8 +27,6 @@ def ai_slash(bot):
     @commands.guild_only()
     @bot.tree.command(name="vision", description="Vision an image")
     async def vision_command(interaction: discord.Interaction, message: str, image_link: str):
-        if interaction.guild.id in blacklisted_servers or interaction.user.id in blacklisted_users:
-            return
         
         await interaction.response.defer(ephemeral=False)
         response = await vision(message, image_link)
@@ -47,9 +44,6 @@ def ai_slash(bot):
     @commands.guild_only()
     @bot.tree.command(name="imagine", description="Imagine an image using LuminaryAI")
     async def imagine_pla(interaction: discord.Interaction, prompt: str):
-
-        if interaction.guild.id in blacklisted_servers or interaction.user.id in blacklisted_users:
-            return
         
         await interaction.response.defer(ephemeral=False)
 

@@ -1,12 +1,13 @@
 import discord
+from discord import Embed
 from discord.ext import commands
 import io
 import random
 from bot_utilities.ai_utils import generate_response_cmd, poly_image_gen, generate_image_prodia, sdxl, search_photo, web_search
 import aiohttp
-from data import ai_channels, server_data_ai
 import datetime
 import json
+from bot_utilities.owner_utils import *
 
 async def embed(ctx ,title, description, color):
     embed = discord.Embed(title=title, description=description, color=color)
@@ -19,30 +20,23 @@ async def embed(ctx ,title, description, color):
 
 
 
-def ai(bot, member_histories_msg):
+def ai(bot, member_histories_msg, mongodb):
 
     ############## ai ##############
     @bot.command(name='activate')
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def start(ctx):
-        if ctx.author.id != 1026388699203772477:
-            return
-        # Get or create server-specific data and set AI responses as false
         server_id = ctx.guild.id
-        if server_id not in server_data_ai:
-            server_data_ai[server_id] = {'response_enabled': False}
 
-        # Check if the user is a moderator, administrator, or has a specific role
-        if any(role.permissions.manage_messages for role in ctx.author.roles) or ctx.author.id == 1026388699203772477:
-
-            if ctx.channel.slowmode_delay >= 10:
-                server_data_ai[server_id]['response_enabled'] = True #set ai to true
-                ai_channels[server_id] = ctx.channel.id  # Store the channel ID
-                await ctx.send(f'AI enabled. AI responses will be sent in <#{ctx.channel.id}>.')
-            else:
-                await ctx.send("Enable 10s slow mode first.")
+        if ctx.author.guild_permissions.administrator or ctx.author.id == 1026388699203772477:
+            insert = insert("ai-channels",server_id, mongodb)
+            if insert == "success":
+                await ctx.send(embed=Embed(description="Success, now I'll respond to **all messages** in this channel.", color=discord.Colour.green()))
+            elif insert == "already set":
+                await ctx.send(embed=Embed(description=":x: **Error**, this channel is already activated.", colour=discord.Colour.red()))
         else:
-            await ctx.send("You don't have permission to use this command.")
+            await ctx.send(embed=Embed(description="**You don't have permission to use this comamnd.**", color=discord.Color.red()),)
+
 
     @bot.command(name='deactivate')
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -50,12 +44,15 @@ def ai(bot, member_histories_msg):
         if ctx.author.id != 1026388699203772477:
             return
         server_id = ctx.guild.id
-        # Check if the user is a moderator, administrator, or has a specific role
-        if any(role.permissions.manage_messages for role in ctx.author.roles) or ctx.author.id == 1026388699203772477:
-            server_data_ai[server_id]['response_enabled'] = False
-            await ctx.send("AI disabled.")
+        if ctx.author.guild_permissions.administrator or ctx.author.id == 1026388699203772477:
+            delete = await deletedb("ai-channels", server_id, mongodb)
+
+            if delete == "success":
+                await ctx.send(embed=Embed(description="**Successfully disabled this channel.**", color=discord.Color.green()),)
+            elif delete == "not found":
+                await ctx.send(embed=Embed(description=":x: **Error**, this channel isn't activated.", colour=discord.Colour.red()))
         else:
-            await ctx.send("You don't have permission to use this command.")
+            await ctx.send(embed=Embed(description="**You don't have permission to use this comamnd.**", color=discord.Color.red()),)
 
 
 
@@ -67,7 +64,7 @@ def ai(bot, member_histories_msg):
     @commands.cooldown(1, 80, commands.BucketType.user)
     async def answer_command(ctx, *, args: str = None):
         if args is None:
-            await embed(ctx, "LuminaryAI - answer generation", "Please enter your question.", color=0x99ccff)
+            await embed(ctx, "LuminaryAI - Error", "Please enter your question.", color=0x99ccff)
             return
         # Get or create member-specific history
         member_id = str(ctx.author.id)  # Using member ID as the key

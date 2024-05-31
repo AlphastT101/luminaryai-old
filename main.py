@@ -66,7 +66,7 @@ bbot(bot,
 music(bot)
 fun(bot)
 general(bot)
-ai(bot, member_histories_msg)
+ai(bot, member_histories_msg, client)
 moderation(bot)
 
 bot_slash(bot, start_time)

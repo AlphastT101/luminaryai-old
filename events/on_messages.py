@@ -1,5 +1,4 @@
 import discord
-from data import server_data_ai, ai_channels
 from bot_utilities.ai_utils import generate_response_msg, sdxl
 import datetime
 import json
@@ -36,7 +35,7 @@ def on_messages(bot, cmd_list , member_histories_msg, mongodb):
 
 
 
-        elif server_data_ai.get(server_id, {}).get('response_enabled', False) and server_id in ai_channels and message.channel.id == ai_channels.get(server_id, 0):
+        elif await getdb("ai-channels",server_id, mongodb) == "found":
 
 
             if await check_blist(message, mongodb):

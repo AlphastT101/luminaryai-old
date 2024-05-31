@@ -22,7 +22,7 @@ async def insertdb(dbname, id ,mongodb):
         doc ={
             "user_id": id
         }
-        result = collection.find_one({"userid_id": int(id)})
+        result = collection.find_one({"user_id": int(id)})
 
         if result:
             return "already blacklisted"
@@ -30,6 +30,20 @@ async def insertdb(dbname, id ,mongodb):
             collection.insert_one(doc)
             return "blacklisted"
 
+    if dbname == 'ai-channels':
+        db = mongodb["ai"]
+        collection = db['channels']
+
+        doc ={
+            "ai_channels": id
+        }
+        result = collection.find_one({"ai_channels": int(id)})
+
+        if result:
+            return "already set"
+        else:
+            collection.insert_one(doc)
+            return "success"
 
 async def getdb(dbname, id, mongodb):
 
@@ -51,6 +65,16 @@ async def getdb(dbname, id, mongodb):
             return "blacklisted"
         else:
             return "not blacklisted"
+        
+    if dbname == 'ai-channels':
+        db = mongodb["ai"]
+        collection = db['channels']
+
+        result = collection.find_one({"ai_channels": int(id)})
+        if result:
+            return "found"
+        else:
+            return "not found"
 
 async def deletedb(dbname, id, mongodb):
 
@@ -76,6 +100,16 @@ async def deletedb(dbname, id, mongodb):
         else:
             return "not blacklisted"
 
+    if dbname == 'ai-channels':
+        db = mongodb['ai']
+        collection = db['channels']
+
+        result = collection.find_one({"ai_channel": int(id)})
+        if result:
+            collection.delete_one({"ai_channel": int(id)})
+            return "success"
+        else:
+            return "not found"
 
 async def check_blist(ctx, mongodb):
 
