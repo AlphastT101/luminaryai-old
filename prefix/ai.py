@@ -1,17 +1,13 @@
 import discord
+from discord import Embed
 from discord.ext import commands
 import io
 import random
 from bot_utilities.ai_utils import generate_response_cmd, poly_image_gen, generate_image_prodia, sdxl, search_photo, web_search
 import aiohttp
-from data import ai_channels, server_data_ai
-# from openai import AsyncOpenAI
-# from dotenv import load_dotenv
-# from bot_utilities.config_loader import load_current_language, config
-# import os
-# import requests
-# from urllib.parse import quote
-
+import datetime
+import json
+from bot_utilities.owner_utils import *
 
 async def embed(ctx ,title, description, color):
     embed = discord.Embed(title=title, description=description, color=color)
@@ -24,45 +20,39 @@ async def embed(ctx ,title, description, color):
 
 
 
-
-
-
-def ai(bot, member_histories_msg):
+def ai(bot, member_histories_msg, mongodb):
 
     ############## ai ##############
     @bot.command(name='activate')
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def start(ctx):
-        if ctx.author.id != 1026388699203772477:
-            return
-        # Get or create server-specific data and set AI responses as false
         server_id = ctx.guild.id
-        if server_id not in server_data_ai:
-            server_data_ai[server_id] = {'response_enabled': False}
 
-        # Check if the user is a moderator, administrator, or has a specific role
-        if any(role.permissions.manage_messages for role in ctx.author.roles) or ctx.author.id == 1026388699203772477:
-
-            if ctx.channel.slowmode_delay >= 10:
-                server_data_ai[server_id]['response_enabled'] = True #set ai to true
-                ai_channels[server_id] = ctx.channel.id  # Store the channel ID
-                await ctx.send(f'AI enabled. AI responses will be sent in <#{ctx.channel.id}>.')
-            else:
-                await ctx.send("Enable 10s slow mode first.")
+        if ctx.author.guild_permissions.administrator or ctx.author.id == 1026388699203772477:
+            insert_result = await insertdb("ai-channels",server_id, mongodb)
+            if insert_result == "success":
+                await ctx.send(embed=Embed(description="Success, now I'll respond to **all messages** in this channel.", color=discord.Colour.green()))
+            elif insert_result == "already set":
+                await ctx.send(embed=Embed(description=":x: **Error**, this channel is already activated.", colour=discord.Colour.red()))
         else:
-            await ctx.send("You don't have permission to use this command.")
+            await ctx.send(embed=Embed(description="**You don't have permission to use this comamnd.**", color=discord.Color.red()),)
+
+
     @bot.command(name='deactivate')
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def stop(ctx):
-        if ctx.author.id != 1026388699203772477:
-            return
+
         server_id = ctx.guild.id
-        # Check if the user is a moderator, administrator, or has a specific role
-        if any(role.permissions.manage_messages for role in ctx.author.roles) or ctx.author.id == 1026388699203772477:
-            server_data_ai[server_id]['response_enabled'] = False
-            await ctx.send("AI disabled.")
+
+        if ctx.author.guild_permissions.administrator or ctx.author.id == 1026388699203772477:
+            delete_result = await deletedb("ai-channels", server_id, mongodb)
+
+            if delete_result == "success":
+                await ctx.send(embed=Embed(description="**Successfully disabled this channel.**", color=discord.Color.green()),)
+            elif delete_result == "not found":
+                await ctx.send(embed=Embed(description=":x: **Error**, this channel isn't activated.", colour=discord.Colour.red()))
         else:
-            await ctx.send("You don't have permission to use this command.")
+            await ctx.send(embed=Embed(description="**You don't have permission to use this comamnd.**", color=discord.Color.red()),)
 
 
 
@@ -74,32 +64,54 @@ def ai(bot, member_histories_msg):
     @commands.cooldown(1, 80, commands.BucketType.user)
     async def answer_command(ctx, *, args: str = None):
         if args is None:
-            await embed(ctx, "LuminaryAI - answer generation", "Please enter your question.", color=0x99ccff)
+            await embed(ctx, "LuminaryAI - Error", "Please enter your question.", color=0x99ccff)
             return
         # Get or create member-specific history
         member_id = str(ctx.author.id)  # Using member ID as the key
         history = member_histories_msg.get(member_id, [])
 
         answer_embed = discord.Embed(
-            title="LuminaryAI - answer generation",
-            description="Generating answer...",
-            color=0x99ccff
+            title="LuminaryAI - Loading",
+            description="Plese wait while i process your request.",
+            color=0x99ccff,
+            timestamp=datetime.datetime.now(datetime.timezone.utc)
         )
+        answer_embed.set_footer(text="This may take a few moments", icon_url=bot.user.avatar.url)
         answer = await ctx.reply(embed=answer_embed)
 
         user_input = args
         generated_message, updated_history = await generate_response_cmd(ctx, user_input, history)
-
-        # Update member-specific history
         member_histories_msg[member_id] = updated_history
+        print(generated_message)
 
-        answer_generated = discord.Embed(
-            title="LumianryAI - answer generation",
-            description=generated_message,
-            color=0x99ccff
-        )
-        await answer.edit(embed=answer_generated)
+        try:
+            dicto = json.loads(generated_message)
 
+            answer_generated = discord.Embed(
+                title="LuminaryAI - Response",
+                description=dicto["answer"],
+                color=0x99ccff,
+                timestamp=datetime.datetime.now(datetime.timezone.utc)
+            )
+            answer_generated.set_footer(text="Thanks for using LuminaryAI!", icon_url=bot.user.avatar.url)
+
+            if dicto["image_gen"] == "False":
+                await answer.edit(embed=answer_generated)
+
+            elif dicto["image_gen"] == "True":
+                image_url = await sdxl(dicto["image_gen_prompt"])
+                answer_generated.set_image(url=image_url)
+                await answer.edit(embed=answer_generated)
+
+        except json.decoder.JSONDecodeError:
+            error_embed = discord.Embed(
+                title="LuminaryAI - Reponse",
+                description=generated_message,
+                color=0x99ccff,
+                timestamp=datetime.datetime.now(datetime.timezone.utc)
+            )
+            error_embed.set_footer(text="Thanks for using LuminaryAI!", icon_url=bot.user.avatar.url)
+            await answer.edit(embed=error_embed)
 
 
     @bot.command(name='imagine')
@@ -141,7 +153,7 @@ def ai(bot, member_histories_msg):
     @commands.cooldown(1, 30, commands.BucketType.user)
     async def search(ctx,*, query: str = None):
         if query is None:
-            await embed(ctx, "LuminaryAI - answer generation", "Please enter your prompt", color=0x99ccff)
+            await embed(ctx, "LuminaryAI - Web search", "Please enter your prompt", color=0x99ccff)
             return
         result = web_search(query)
         if result == "":
@@ -151,9 +163,9 @@ def ai(bot, member_histories_msg):
             description=result,
             color=0x99ccff
         )
-        file = discord.File("web_search.png", filename="web_search.png")
+        file = discord.File("images/web_search.png", filename="web_search.png")
         web_embed.set_thumbnail(url="attachment://web_search.png")
-        web_embed.set_footer(text="LumianryAI")
+        web_embed.set_footer(text="Thanks for using LumianryAI!", icon_url=bot.user.avatar.url)
         await ctx.reply(embed=web_embed, file=file)
 
     @bot.command(name='imagine.p')
