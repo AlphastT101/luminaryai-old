@@ -1,33 +1,12 @@
-import logging
-import traceback
-import asyncio
 import discord
 from discord.ext import commands, tasks
 from discord.ui import Select, View
 import datetime
-from datetime import datetime
-
 import time
 import psutil
 import io
 import contextlib
-import pymongo
-
-import data
-
-
-import motor.motor_asyncio
-from pymongo import MongoClient
-
-
-# Initialize the logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-
-
-# import button_paginator as pg
-# from button_paginator import PaginatorView
+from bot_utilities.owner_utils import *
 
 
 def get_cpu_usage():
@@ -48,129 +27,98 @@ cpu_text = f"{cpu_percent:.0f}% of {cpu_cores} cores"
 total_ram_gb = psutil.virtual_memory().total / (1024 ** 3)  # Convert to GB
 ram_text = f"{ram_percent:.0f}% of {total_ram_gb:.0f}GB ({total_ram_gb * ram_percent / 100:.0f}GB)"
 
-async def loading_animation(ctx, loading_length=10):
-    # Create the loading message with initial state
-    loading_message = await ctx.reply(f"⏳ Loading: {' ' * loading_length} | 0%")
-    
-    # Define the progress bar segments
-    progress_bar_full = "█"
-    progress_bar_empty = "░"
-    
-    # Update the progress bar during loading
-    for i in range(loading_length + 1):
-        progress = i / loading_length  # Calculate the progress percentage
-        bar = progress_bar_full * i + progress_bar_empty * (loading_length - i)
-        percentage = int(progress * 100)
+
+
+def bbot(bot, start_time, mongodb):
+
+    @bot.command(name="ping")
+    async def ping(ctx):
+        wait = await ctx.send("**Please wait while I calculate my latency.**")
+        latency_ms = round(bot.latency * 1000)
+        await wait.edit(content=f'**Pong! My Latency is `{latency_ms}ms`.**')
+
+
+    @bot.command(name="server")
+    async def list_guilds(ctx):
+        """Lists all the guilds the bot is in along with their IDs."""
+        guilds = ctx.bot.guilds
+        per_page = 15  # Number of guilds to display per page
+        total_pages = (len(guilds) + per_page - 1) // per_page  # Calculate total pages
+        pages = []
+        for i in range(0, len(guilds), per_page):
+            page = "\n".join([f"{guild.name} - `{guild.id}`" for guild in guilds[i:i + per_page]])
+            pages.append(page)
+        current_page = 0
+
+        async def update_message(interaction):
+            embed = discord.Embed(title="Guilds List", color=discord.Color.blue())
+            embed.description = pages[current_page]
+            embed.set_footer(text=f"Page {current_page + 1}/{total_pages}")
+
+            # Disable buttons as needed
+            previous_button.disabled = current_page == 0
+            next_button.disabled = current_page == total_pages - 1
+
+            await interaction.response.defer()
+            await interaction.message.edit(embed=embed, view=view)
+
+        async def previous_callback(interaction):
+            nonlocal current_page
+            if current_page > 0:
+                current_page -= 1
+                await update_message(interaction)
+
+        async def next_callback(interaction):
+            nonlocal current_page
+            if current_page < len(pages) - 1:
+                current_page += 1
+                await update_message(interaction)
+
+        async def stop_callback(interaction):
+            await paginator_message.edit(embed=initial_embed, view=None)
+            view.stop()
+
+        async def on_timeout():
+            await paginator_message.edit(embed=initial_embed, view=None)
+            view.stop()
+
+        initial_embed = discord.Embed(title="Guilds List", color=discord.Color.blue())
+        initial_embed.description = pages[current_page]
+        initial_embed.set_footer(text=f"Page {current_page + 1}/{total_pages}")
+
+        previous_button = discord.ui.Button(label="⬅️", style=discord.ButtonStyle.primary)
+        next_button = discord.ui.Button(label="➡️", style=discord.ButtonStyle.primary)
+        stop_button = discord.ui.Button(label="❌", style=discord.ButtonStyle.danger)
+
+        view = discord.ui.View(timeout=20)
+        view.add_item(previous_button)
+        view.add_item(next_button)
+        view.add_item(stop_button)
+
+
+
         
-        # Update the loading message with the current progress
-        await loading_message.edit(content=f"⏳ Loading: {bar} | {percentage}%")
-        
-        # Wait for a short duration before updating again
-        await asyncio.sleep(0.4)  # Adjust the sleep time as needed
+        # Disable buttons initially for first page
+        previous_button.disabled = True
+        paginator_message = await ctx.send(embed=initial_embed, view=view)
 
-    # Return the final loading message
-    return loading_message
+        previous_button.callback = previous_callback
+        next_button.callback = next_callback
+        stop_button.callback = stop_callback
 
-
-
-async def error_mongo_embed(bot, ctx, e):
-        # Create an error embed after catching the exception
-        
-        error_embed = discord.Embed(
-            description=f'```bash\n{e}```',
-            color=discord.Color.red(),
-            timestamp=datetime.now()
-        )
-        error_embed.set_author(name=f'{bot.user.display_name.title()} - Mongo Error',icon_url='https://cdn.iconscout.com/icon/free/png-512/free-mongodb-3-1175138.png?f=webp&w=256')
-        # Get the last traceback frame from the exception
-        line_number = traceback.extract_tb(e.__traceback__)[-1].lineno
-        tb_frame = traceback.extract_tb(e.__traceback__)[-1]
-        file_location = tb_frame.filename  # File location
-
-        print("Error found in line", line_number)
-        error_embed.add_field(
-         name=" ",
-         value = f":warning: **Potential issue found:**\n- **File:** `{file_location}`\n- **Line:** `{line_number}`",
-         inline=False
-        )
-        error_embed.set_footer(icon_url=bot.user.avatar, text='Error Found')
-            
-        # Inform the user about the error
-        return error_embed
-
-async def send_success_messages(ctx, db_info, collection_info):
-    # Create a success embed for database information
-    db_embed = discord.Embed(title="Gathering Database Information", color=discord.Color.green())
-    db_embed.add_field(name=":file_cabinet: - Database Details:", value=f"```bash\n{db_info}```\nCompleted 1/2 - :white_check_mark:", inline=False)
-    
-    # Create a success embed for collection information
-    collection_embed = discord.Embed(title="Gathering Collection Information:", color=discord.Color.green())
-    collection_embed.add_field(name="🗃️ - Collection Details:", value=f"```bash\n{collection_info}```\nCompleted 2/2 - :white_check_mark:", inline=False)
-    
-    # Return the success Embed objects
-    return db_embed, collection_embed
+        view.timeout_callback = on_timeout
 
 
-
-
-def bbot(bot, developer_members, start_time, blacklisted_servers, member_histories_msg, ai_channels, server_data_ai, blacklisted_users):
-    
-    @bot.command(name="test_mb")
-    async def test_mb(ctx):
-        try:
-            # Connect to the database and collection
-            db = bot.mongoConnect['Database']
-            collection = db['Collection']
-
-            logger.info("Testing database connection.")
-            # Start loading animation
-            loading_message = await loading_animation(ctx, loading_length=10)   
-            db_embed, collection_embed = await send_success_messages(ctx, db, collection) 
-            # Send the success messages
-            db_message = await ctx.send(embed=db_embed)
-            collection_message = await ctx.send(embed=collection_embed)
-            
-            # Edit the loading message
-            await loading_message.delete()
-            
-            # Check if user has an entry in the collection
-            user_id = ctx.message.author.id
-            user_entry = await collection.find_one({"_id": user_id})
-            
-            # If user does not have an entry, create one
-            if user_entry is None:
-                new_data = {
-                    "_id": user_id,
-                    "check": 1
-                }
-                await collection.insert_one(new_data)
-                logger.info(f"New data inserted: {new_data}")
-                await ctx.send(f"Data inserted: {new_data}")
-            else:
-                # Inform the user about the data found for the user
-                await ctx.send(f"User entry: {user_entry}")
-        
-        except Exception as e:
-            # Log any exceptions that occur
-            logger.error(f"An error occurred: {e}")
-            
-            # Create an error embed after catching the exception
-            error_embed = await error_mongo_embed(bot, ctx, e)
-
-            # Inform the user about the error
-            await ctx.reply(f"Sorry {ctx.message.author.mention}, there has been an error.")
-            await ctx.send(embed=error_embed)
 
     ####### return message ######
     @bot.command(name="say")
     async def m(ctx, *, message: str = None):
-        # 900436346420732065 - toast
 		# 1026388699203772477 - alphast101
 		# 973461136680845382 - wqypp
         # 885977942776246293 -jeydalio
         if message is None:
             return
-        allowed = [973461136680845382, 1026388699203772477, 900436346420732065, 885977942776246293]
+        allowed = [973461136680845382, 1026388699203772477, 885977942776246293]
         if ctx.author.id in allowed:
             bot_member = ctx.guild.me
             if bot_member.guild_permissions.manage_messages:
@@ -187,33 +135,6 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
             print(message)
             await ctx.message.delete()
             await ctx.send(message)
-        else:
-            await ctx.send("**This command is restricted**", delete_after=3)
-
-    @bot.command(name="serverinv")
-    async def list_serversinv(ctx):
-        if ctx.author.id == 1026388699203772477:
-            servers = bot.guilds
-
-            if not servers:
-                await ctx.send("The bot is not a member of any servers.")
-                return
-
-            embed = discord.Embed(
-                title="Server List",
-                color=0x99ccff
-            )
-
-            for server in servers:
-                try:
-                    invite = await server.text_channels[0].create_invite()
-                    embed.add_field(name=server.name, value=f"Invite: {invite}", inline=False)
-                except discord.errors.Forbidden:
-                    embed.add_field(name=server.name, value="Unable to create invite (missing permissions)", inline=False)
-
-            await ctx.send(embed=embed)
-        else:
-            await ctx.send("**This command is restricted**", delete_after=3)
 
 
     @bot.command(name="sync")
@@ -222,100 +143,67 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
             await ctx.send("**<@1026388699203772477> Syncing slash commands...**")
             await bot.tree.sync()
             await ctx.send("**<@1026388699203772477> Slash commands synced!**")
-        else:
-            return
-
-    @bot.command(name="blacklist.server")
-    async def blacklist_server(ctx, *, serverid):
-        guild = bot.get_guild(int(serverid))  # Convert serverid to integer
-
-        if ctx.author.id == 1026388699203772477:
-            if guild:  # Check if guild is found
-                if int(serverid) not in blacklisted_servers:
-                    blacklisted_servers.append(int(serverid))
-                    await ctx.send(f"**`{guild.name}` has been blacklisted!**")
-                else:
-                    await ctx.send("**This server is already blacklisted!**")
-            else:
-                await ctx.send("**Guild not found!**")
-        else:
-            return
-
-    @bot.command(name="unblacklist.server")
-    async def ublacklist_server(ctx, *, serverid):
-        guild = bot.get_guild(int(serverid))  # Convert serverid to integer
-
-        if ctx.author.id == 1026388699203772477:
-            if guild:  # Check if guild is found
-                if int(serverid) in blacklisted_servers:
-                    blacklisted_servers.remove(int(serverid))
-                    await ctx.send(f"**`{guild.name}` has been unblacklisted!**")
-                else:
-                    await ctx.send("**This server is not blacklisted!**")
-            else:
-                await ctx.send("**Guild not found!**")
-        else:
-            return
 
 
-    @bot.command(name="blacklist.user")
-    async def blacklist_user(ctx, *, userid):
-        user = bot.get_user(int(userid))  # Convert userid to integer
-
-        if ctx.author.id == 1026388699203772477:
-            if user:  # Check if guild is found
-                if int(userid) not in blacklisted_users:
-                    blacklisted_users.append(int(userid))
-                    await ctx.send(f"**`{user.name}` has been blacklisted!**")
-                else:
-                    await ctx.send("**This user is already blacklisted!**")
-            else:
-                await ctx.send("**user not found!**")
-        else:
-            return
-    @bot.command(name="unblacklist.user")
-    async def ublacklist_user(ctx, *, userid):
-        user = bot.get_user(int(userid))  # Convert userid to integer
-
-        if ctx.author.id == 1026388699203772477:
-            if user:  # Check if guild is found
-                if int(userid) in blacklisted_users:
-                    blacklisted_users.remove(int(userid))
-                    await ctx.send(f"**`{user.name}` has been unblacklisted!**")
-                else:
-                    await ctx.send("**This user is not blacklisted!**")
-            else:
-                await ctx.send("**user not found!**")
-        else:
-            return
-
-    @bot.command(name="save")
-    async def save(ctx):
-        if ctx.author.id == 1026388699203772477:
-            # Open the "data.py" file in write mode
-
-            with open("data.py", "w") as file:
-                # Write the content with the provided variable
-                file.write(f"blacklisted_servers = {blacklisted_servers}\nblacklisted_users = {blacklisted_users}\n\nmember_histories_msg = {member_histories_msg}\n\nserver_data_ai = {server_data_ai}\nai_channels = {ai_channels}")
-                file.close()
-            await ctx.send("**Data saved successfully!**")
-        else:
-            return
         
-    @bot.command(name="developer")
-    @commands.cooldown(1, 10, commands.BucketType.user)
-    async def developer(ctx, choice: str):
-        # Check if developer mode is enabled for the user
-        developer_mode = ctx.author.id in developer_members and developer_members[ctx.author.id]
+    @bot.command(name="blist")
+    async def blist(ctx, object, id = None):
+        if ctx.author.id != 1026388699203772477:
+            return
 
-        if choice.lower() == "true":
-            developer_members[ctx.author.id] = True
-            await ctx.send(f"Developer mode enabled for {ctx.author}")
-        elif choice.lower() == "false":
-            developer_members[ctx.author.id] = False
-            await ctx.send(f"Developer mode disabled for {ctx.author}")
+        try:
+            id = int(id)
+        except TypeError:
+            await ctx.send("Invalid Command or ID")
+            return
+
+        if object == "server":
+            guild = bot.get_guild(id)
+            if guild:
+                insert = await insertdb('blist-servers', id, mongodb)
+                await ctx.send(f"**{guild} is {insert}.**")
+            else:
+                await ctx.send(f"**Guild not found, `{guild}`**")
+
+        elif object == 'user':
+            user = bot.get_user(id)
+            if user:
+                insert = await insertdb('blist-users', id, mongodb)
+                await ctx.send(f"**{user} is {insert}**")
+            else:
+                await ctx.send(f"**User not found, `{user}`**")
         else:
-            await ctx.send("Invalid choice.")
+            await ctx.send(f"Invalid object")
+
+    @bot.command(name="unblist")
+    async def unblist(ctx, object, id = None):
+        if ctx.author.id != 1026388699203772477:
+            return
+
+        try:
+            id = int(id)
+        except TypeError:
+            await ctx.send("Invalid Command or ID")
+            return
+
+        if object == "server":
+            guild = bot.get_guild(id)
+            if guild:
+                insert = await deletedb('blist-servers', id, mongodb)
+                await ctx.send(f"**{guild} is {insert}.**")
+            else:
+                await ctx.send(f"**Guild not found, `{guild}`**")
+
+        elif object == 'user':
+            user = bot.get_user(id)
+            if user:
+                insert = await deletedb('blist-users', id, mongodb)
+                await ctx.send(f"**{user} is {insert}**")
+            else:
+                await ctx.send(f"**User not found, `{user}`**")
+        else:
+            await ctx.send(f"Invalid object")
+
 
 
     @bot.command(name="eval")
@@ -423,8 +311,7 @@ def bbot(bot, developer_members, start_time, blacklisted_servers, member_histori
         about.add_field(name='RAM usage', value=f"{ram_text}", inline=True)
         about.add_field(name='CPU usage', value=f"{cpu_text}", inline=True)
         about.set_image(url="attachment://ai.png")
-        filename = "ai.png"
-        # Send the embed without the file parameter
+        filename = 'images/ai.png'
         await ctx.send(embed=about, file=discord.File(filename, filename="ai.png"))
 
 

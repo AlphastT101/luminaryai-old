@@ -4,7 +4,7 @@ import datetime
 import time
 from discord.ext import commands
 import psutil
-from data import blacklisted_servers
+
 
 def get_cpu_usage():
     return psutil.cpu_percent(interval=1)
@@ -31,16 +31,14 @@ def bot_slash(bot,start_time):
     @bot.tree.command(name="status", description="Check bot status")
     @commands.guild_only()
     async def check(interaction: discord.Interaction):
-        if interaction.guild.id in blacklisted_servers:
-            return
+
         await interaction.response.send_message("bot is online")
 
     ##### help #######
     @bot.tree.command(name="help", description="Help/command list")
     @commands.guild_only()
     async def help(interaction: discord.Interaction):
-        if interaction.guild.id in blacklisted_servers:
-            return
+
         await interaction.response.defer(ephemeral=False)
         embed_bot = discord.Embed(
             title="Bot related commands",
@@ -197,8 +195,6 @@ def bot_slash(bot,start_time):
     @bot.tree.command(name="about", description="about the bot")
     @commands.guild_only()
     async def about(interaction: discord.Interaction):
-        if interaction.guild.id in blacklisted_servers:
-            return
         current_time = time.time()
         difference = int(round(current_time - start_time))
         uptime_duration = datetime.timedelta(seconds=difference)

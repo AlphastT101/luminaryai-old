@@ -1,592 +1,9 @@
+import yt_dlp as youtube_dl
 from discord.ext import commands
 import discord
 import pyshorteners
 import asyncio
-from asyncio import Lock
 
-# Assign Task
-import time
-import random
-from datetime import datetime
-import traceback
-import logging
-
-# Discord Import
-import discord
-from discord.ext import commands
-
-# Youtube Import
-from yt_dlp import YoutubeDL
-
-
-# Music Class
-class Music(commands.Cog):
-
-  def __init__(self, bot):
-    self.bot = bot
-    self.music_queue = []
-    self.current_song = None
-    self.current_song_index = -1
-    self.repeat = False
-    self.voice_client = None
-    self.play_lock = Lock()
-
-
-
-  @commands.Cog.listener()
-  async def on_ready(self):
-    await self.bot.change_presence(status=discord.Status.idle,activity=discord.Activity(type=discord.ActivityType.listening, name=",help"))
-    print("Music.py is ready!")
-
-  def search(self, query: str, ctx):
-   
-    ydl_opts = {
-     'format': 'bestaudio/best',
-     'restrictfilenames': True,
-     'noplaylist': True,
-     'nocheckcertificate': True,
-     'ignoreerrors': False,
-     'logtostderr': False,
-     'no_warnings': True,
-     'default_search': 'auto',
-     'source_address': '0.0.0.0',
-     'quiet': True,
-     'extract_flat': True,
-     'audioquality': '4',  # Best audio quality
-     'max_downloads': 100,  # Adjust as needed
-
-    }
-
-
-    if query.startswith("https://"):  # check if the query is a link
-      with YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(query, download=False)
-
-        if 'entries' in info:  # if the link is a playlist link, it'll have entries
-          entries = info['entries']
-          return [{
-              'thumbnail_url': entry['thumbnails'][0]['url'],
-              'title': entry['title'],
-              'source': entry['url'],
-              'user_req': ctx.author
-          } for entry in entries if entry['title'] != "[Deleted video]"]
-
-        else:
-          return [{
-              'thumbnail_url': info['thumbnail'],
-              'title': info['title'],
-              'source': info['url'],
-              'user_req': ctx.author
-          }]
-
-    else:  # if not then search
-      with YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(f"ytsearch{4}:{query}", download=False)
-        entries = info['entries']
-        return [{
-            'thumbnail_url': entry['thumbnails'][0]['url'],
-            'title': entry['title'],
-            'source': entry['url'],
-            'user_req': ctx.author
-        } for entry in entries]
-
-  
-  async def play(self, ctx, *, args):
-    """Plays a song from youtube"""
-    if not ctx.author.voice:
-        await ctx.send("You are not in a voice channel!")
-        return
-
-    try:
-        # Check if the bot is already connected to a voice channel
-        if self.voice_client is not None and self.voice_client.is_connected():
-            # Check if the bot is in the same voice channel as the command invoker
-            if self.voice_client.channel != ctx.author.voice.channel:
-                # Move the bot to the voice channel of the command invoker
-                await self.voice_client.move_to(ctx.author.voice.channel)
-        else:
-            # Connect to the voice channel
-            self.voice_client = await ctx.author.voice.channel.connect()
-    except discord.ClientException as e:
-        # Handle the "Already connected to a voice channel" error
-        pass
-
-    # Search the song
-    query = " ".join(args)
-
-    message = await ctx.send("> `Searching...` 🔎")
-    result = self.search(query, ctx)
-    await message.delete()
-
-    if not result:
-      await ctx.send("> `No results found ?` ❌")
-      return
-
-    if query.startswith("https://") and len(result) > 1:  # Playlist
-      await ctx.send("> `Found playlist, add songs to queue` ✅")
-      for entry in result:
-        self.music_queue.append(entry)
-
-    if query.startswith("https://") and len(result) == 1:  # Single Link
-      await ctx.send(f"> `Found {result[0]['title']}, adding to queue` ✅")
-      self.music_queue.append(result[0])
-
-    if not query.startswith("https://"):  # Search and Choose | By Number
-      embed = discord.Embed(
-          title="Song Selection",
-          color=0x99ccff  # ctx.guild.get_member(self.bot.user.id).color
-      )
-
-      embed.set_thumbnail(url=self.bot.user.avatar.url)
-      embed.set_footer(text="Choose a song: 1-4",
-                       icon_url=self.bot.user.avatar)
-
-      for i, entry in enumerate(result):
-        embed.add_field(name=f"> `{i+1}`. `{entry['title']}`",
-                        value=f"- Source: {entry['source']}",
-                        inline=False)
-
-      message = await ctx.send(embed=embed)
-
-      def check(msg):
-        return msg.author == ctx.author and msg.channel == ctx.channel
-
-      try:
-        response = await self.bot.wait_for("message", check=check, timeout=15)
-
-        if response.content.lower() == "c":
-          await message.delete()
-          await ctx.send("> `Canceled Search`")
-          await response.delete()  # Move this line inside the try block
-          return  # Cancel the operation
-        
-        
-        picked = 1 if not response.content else int(response.content)
-        choice = int(picked) - 1
-        if 0 <= choice < len(result):
-          await message.delete()
-          await ctx.channel.purge(limit=1)
-          await ctx.send(
-              f"> `{ctx.author.name}` picked `{result[choice]['title']}`")
-          self.music_queue.append(result[choice])
-          await self.play_music(ctx)
-        
-          await self.nowplaying(ctx)
-
-          await self.bot.change_presence(status=discord.Status.idle, activity=discord.Game(name=f"{result[choice]['title']}"))
-
-
-
-        else:
-          await ctx.send(
-              "> Choice must be from options: `1 - 4`. Type 'c' to cancel.")
-          return  # Cancel the operation
-
-      except ValueError:
-        await ctx.send(
-            "> Choice must be from options: `1 - 4`, Type **Number**. Type 'c' to cancel."
-        )
-
-      except TimeoutError:
-        await ctx.send("> `It seems you took too long to respond. Choosing the first result.`")
-
-        # Choose the first result as a default
-        choice = 0
-
-        await message.delete()
-
-        await ctx.send(
-            f"> `{ctx.author.name}` picked `{result[choice]['title']}`"
-        )
-    
-        self.music_queue.append(result[choice])
-        await self.play_music(ctx)
-        await self.nowplaying(ctx)
-
-        await self.bot.change_presence(
-          status=discord.Status.idle,
-          activity=discord.Game(name=f"{result[choice]['title']}"),
-        )
-        try:
-          await self.play_music(ctx)
-        except Exception as e:
-          print(e)
-
-  async def play_music(self, ctx):
-    # loop function to check for entry in que and play
-    if self.voice_client.is_playing():
-      return
-
-    if self.current_song_index + 2 <= len(self.music_queue):
-      self.current_song_index = self.current_song_index + 1
-      self.current_song = self.music_queue[self.current_song_index]
-
-      ydl_opts = {
-          'format': 'bestaudio',
-          'quiet': True,
-          'source_address': '0.0.0.0',  # Set the source address
-          'extract_flat': False,
-      }
-      ffmpeg_opts = {
-       'options': '-vn',
-       # Disable video processing, use Opus codec for audio, set bitrate to 128k, compression level 10, and optimize for audio
-       'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'}
-        # Reconnect options
-
-
-      with YoutubeDL(ydl_opts) as ydl:
-        result = ydl.extract_info(url=self.current_song['source'],
-                                  download=False)
-      source = discord.FFmpegPCMAudio(result['url'], **ffmpeg_opts)
-
-     
-      self.voice_client.play(
-          source,
-          after=lambda e: self.bot.loop.create_task(self.play_music(ctx)))
-
-
-
-    else:
-      if self.repeat:
-        self.current_song_index = -1
-        await self.play_music(ctx)
-
-      else:
-        self.current_song_index = -1
-        self.music_queue = []
-        await self.bot.change_presence(status=discord.Status.idle,activity=discord.Activity(type=discord.ActivityType.listening, name=";help"))
-
-        self.voice_client = await self.voice_client.disconnect()
-  
-  async def get_next_song(self):
-        if len(self.music_queue) > 1:
-            # Return the second song in the queue (index 1)
-            return self.music_queue[self.current_song_index + 1] if self.current_song_index + 1 < len(self.music_queue) else None
-        else:
-            return None
-
-  # Embed  | Current song title playing with the youtube image set
-  async def nowplaying(self, ctx: commands.Context):
-    try:
-        if self.current_song is None:
-            await ctx.send("No song is currently playing.")
-            return
-
-        # Get information about the next song
-        next_song = await self.get_next_song()
-
-        next_song_title = next_song['title'] if next_song else "No upcoming songs"
-
-        # Design your embed here
-        embed = discord.Embed(
-            title=f"Now Playing:",
-            description=f"```{self.current_song['title']}```",
-            color=0x99ccff,
-            timestamp=datetime.now()
-
-        )
-
-        embed.set_image(url=self.current_song['thumbnail_url'])
-        embed.set_footer(icon_url=ctx.message.author.avatar, text=f"Playing for {ctx.message.author.name}")
-
-        # Add information about the next song
-        embed.add_field(name="Next Song:", value=f"```{next_song_title}```", inline=False)
-
-    
-        await ctx.send(embed=embed, view=MusicButton(self, ctx))
-    except Exception as e:
-        print(f"An error occurred: {e}")
- 
-  @commands.command(name='nowplaying', aliases=['np'])
-  async def nowplaying_command(self, ctx: commands.Context):
-    if not ctx.author.voice:
-        await ctx.reply("You are not in a `voice channel`.")
-        return
-    
-    try:
-        # Check if there is a currently playing song
-        if self.current_song is None:
-            await ctx.send("No song is currently playing.")
-            return
-
-        # Get information about the currently playing song
-        current_song_title = self.current_song['title']
-
-        # Get information about the next song
-        next_song = self.get_next_song()
-        if next_song:
-            next_song_title = next_song['title']
-        else:
-            next_song_title = "No upcoming songs"
-
-        # Design your "now playing" embed here
-        embed = discord.Embed(
-            title="Now Playing",
-            description=f"```{current_song_title}```",
-            color=0xFF0000  # Adjust color to match your bot theme
-        )
-
-        embed.set_image(url=self.current_song['thumbnail_url'])
-        embed.add_field(name="Next Song", value=f"```{next_song_title}```", inline=False)
-        embed.set_footer(icon_url=ctx.message.author.avatar, text=f"Playing for {ctx.message.author.name}")
-
-        # Send the embed
-        message = await ctx.send(embed=embed,view=MusicButton(self, ctx))
-
-    except Exception as e:
-        # Handle exceptions and inform the user
-        await ctx.send(f"An error occurred: {e}")
-
-
-  # Pauses currrent song
-  async def toggle_pause(self):
-    if self.voice_client.is_playing():
-      self.voice_client.pause()
-    else:
-      self.voice_client.resume()
-
-  async def toggle_repeat(self):
-    self.repeat = not self.repeat
-
-  async def skip(self):
-    self.voice_client.stop()
-
-  # Stops current song playing  
-  async def stop(self):
-    self.music_queue = []
-    await self.voice_client.stop()
-
-  async def shuffle(self):
-    if self.music_queue:
-      random.shuffle(self.music_queue)
-    
-  """
-  @commands.command(name='playall', aliases=['pa'])
-  async def playall_command(self,ctx: commands.Context):
-    # Check if there are items in the search result list
-    if not self.search_results:
-        await ctx.send("There are no search results to play.")
-        return
-
-    # Clear the existing music queue
-    self.music_queue = []
-
-    # Add all search results to the queue
-    self.music_queue.extend(self.search_results)
-
-    # Clear the search result list
-    self.search_results = []
-
-    # Play the first item in the queue
-    await self.play_music(ctx)
-
-    # Display the now playing message
-    await self.nowplaying(ctx)
-  """
-    
-    
-    
-  def get_queue_songs(self):
-        if len(self.music_queue) > 1:
-            # Return all songs in the queue starting from index 1
-            return self.music_queue[1:]
-        else:
-            return []  
-    
-  @commands.command(name='queue', aliases=['q'])
-  async def queue_command(self, ctx: commands.Context):
-    try:
-        print("Working Queue :3")
-        # Check if there are items in the queue
-        if not self.music_queue:
-            await ctx.send("The queue is empty.")
-            return
-
-        # Get all upcoming songs in the queue
-        next_songs = self.get_queue_songs()
-
-        # Check if there are no upcoming songs
-        if not next_songs:
-            await ctx.send("There are no upcoming songs in the queue.")
-            return
-
-        # Design your queue list embed here
-        embed = discord.Embed(
-            title="Music Queue",
-            color=0x99ccff  # Adjust color to match your bot theme
-        )
-
-        # Add fields for each upcoming song
-        for index, song in enumerate(next_songs, start=1):
-            embed.add_field(name=" ",value=f"```{index}. {song['title']}```", inline=False)
-
-        await ctx.send(embed=embed)
-
-    except Exception as e:
-        # Handle exceptions and inform the user
-        await ctx.send(f"An error occurred: {e}")
-
-
-
-
-
-
-
-
-
-class MusicButton(discord.ui.View):
-  def __init__(self, music_class: Music, ctx: commands.Context, timeout=None):
-    super().__init__(timeout=timeout)
-
-    self.music_class = music_class
-    self.ctx = ctx
-
-    # Initiate Button Pause Label
-    # self.children[0].label = "Pause" if self.music_class.voice_client.is_playing() else "Resume"
-
-    # Initiate Button Repeat Label
-    # self.children[1].label = "Repeat On" if self.music_class.repeat else "Repeat Off"
-    # self.children[1].style =  you can change style if you want
-  
-  #design your buttons
-
-  # Embed  | Current song title playing with the youtube image set
-  async def nowplaying(self, ctx: commands.Context):
-    try:
-        if self.current_song is None:
-            await ctx.send("No song is currently playing.")
-            return
-
-        # Check if there are upcoming songs in the queue
-        if len(self.music_queue) > 1:
-            next_song = self.music_queue[1]
-            next_song_title = next_song['title']
-        else:
-            next_song_title = "No upcoming songs"
-
-        # Design your embed here
-        embed = discord.Embed(
-            title="Now Playing",
-            description=f"```{self.current_song['title']}```",
-            color=0x99ccff  # Adjust color to match your bot theme
-        )
-
-        embed.set_image(url=self.current_song['thumbnail_url'])
-        embed.add_field(name="Next Song", value=f"```{next_song_title}```", inline=False)
-        embed.set_footer(icon_url=ctx.message.author.avatar, text=f"Playing for {ctx.message.author.name}")
-
-        await ctx.send(embed=embed)
-
-    except Exception as e:
-        # Handle exceptions and inform the user
-        await ctx.send(f"An error occurred: {e}")
-
-
-    except Exception as e:
-        # Handle exceptions and inform the user
-        await ctx.send(f"An error occurred: {e}")
-
- 
-  @discord.ui.button(
-    label= "Pause",
-    style=discord.ButtonStyle.primary,
-  )
-  async def toggle_pause(self, interaction: discord.Interaction, button: discord.ui.Button):
-    if not interaction.user.voice:
-            await interaction.response.send_message("You are not in a voice channel bro?", ephemeral=True)
-            return
-    await self.music_class.toggle_pause()
-    button.emoji = "<:pause2:1176772089764651009>" if self.music_class.voice_client.is_playing() else "<:resume:1176772087059316858>"
-
-    await interaction.response.edit_message(view=self)
-
-  
-  @discord.ui.button(
-    label= "Repeat",
-    style=discord.ButtonStyle.primary,
-  )
-  async def toggle_repeat(self, interaction: discord.Interaction, button: discord.ui.Button):
-    if not interaction.user.voice:
-            await interaction.response.send_message("You are not in a voice channel bro?", ephemeral=True)
-            return
-    await self.music_class.toggle_repeat()
-    self.children[1].style = discord.ButtonStyle.green if self.music_class.repeat else discord.ButtonStyle.primary
-    await interaction.response.edit_message(view=self)
-  
-  @discord.ui.button(
-    label= "Skip",
-    style=discord.ButtonStyle.primary,
-   )
-  async def skip(self, interaction: discord.Interaction, button: discord.ui.Button):
-    if not interaction.user.voice:
-      await interaction.response.send_message("My apologises, but your are not in a voice channel.", ephemeral=True)
-      return
-    try:
-        # Get information about the user who skipped
-        skipper_name = interaction.user.name
-        skipper_avatar_url = interaction.user.avatar
-
-        # Skip the current song
-        await self.music_class.skip()
-
-        # Send an embed indicating who skipped and include the now playing information
-        await interaction.response.send_message(
-            embed=discord.Embed(
-                title=f"{skipper_name} skipped the song!",
-                color=discord.Color.red(),  # Adjust color to match your bot theme
-            ).set_thumbnail(url=skipper_avatar_url)
-        )
-
-        # Wait for a moment to ensure the skip operation is complete
-        await asyncio.sleep(1)
-
-        # Update the now playing information
-        await Music.nowplaying(ctx)
-
-        await self.music_class.nowplaying(self.ctx)
-        
-
-    except Exception as e:
-        # Handle exceptions and inform the user
-        await interaction.response.send_message(f"An error occurred: {e}")
-
-    except Exception as e:
-        # Handle exceptions and inform the user
-        await interaction.response.send_message(f"An error occurred: {e}")
-  
-  @discord.ui.button(
-    label="Stop",
-    style=discord.ButtonStyle.danger,
-  )
-  async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
-    try:
-        # Check if the user is in a voice channel
-        if not interaction.user.voice:
-            await interaction.response.send_message("You are not in a voice channel bro?", ephemeral=True)
-            return
-
-        # Get the name and avatar of the user who stopped the music
-        stopper_name = interaction.user.name
-        stopper_avatar_url = interaction.user.avatar
-
-        # Stop the music
-        await self.music_class.stop()
-
-        # Create an ephemeral embed indicating the music has been stopped
-        stop_embed = discord.Embed(
-            title="Music Stopped",
-            description=f"Music has been stopped by {stopper_name}!",
-            color=discord.Color.red(),  # Adjust color to match your bot theme
-        )
-        stop_embed.set_thumbnail(url=stopper_avatar_url)  # Set user's avatar as thumbnail
-
-        # Send the ephemeral embed
-        await interaction.response.send_message(embed=stop_embed, ephemeral=True)
-
-    except Exception as e:
-        # Handle exceptions and inform the user
-        await interaction.response.send_message(f"An error occurred: {e}", ephemeral=True)
-    
 
 # Define the FFMPEG options
 FFMPEG_OPTIONS = {
@@ -720,7 +137,7 @@ def music(bot):
                     description=f"I don't have the following permissions in the voice channel:\n{', '.join(missing_permissions)}",
                     color=0xFF0000
                 )
-                file = discord.File("music.png", filename="thumbnail.png")
+                file = discord.File("images/music.png", filename="thumbnail.png")
                 perms_embed.set_thumbnail(url="attachment://thumbnail.png")
                 await ctx.send(embed=perms_embed, file=file)
                 return
@@ -761,49 +178,78 @@ def music(bot):
 
     @bot.command(name='play')
     @commands.cooldown(1, 15, commands.BucketType.user)
-    async def play(ctx, *, args='chill step coding music'):
-     print('working')
-     try:
-        music_instance = Music(bot)  # Create an instance of the Music class
-        await music_instance.play(ctx=ctx, args=args)  # Call the play method on the instance
-        print("Song Name: ", args)
-     except Exception as e:
-        print("An error occurred:", e)
-    async def error_embed(ctx, e):
-     # Create an error embed after catching the exception
-     error_embed = discord.Embed(
-        description=f'```bash\n{e}```',
-        color=discord.Color.red(),
-        timestamp=datetime.now()
-     )
-     error_embed.set_author(name=f'{bot.user.display_name.title()} - Error', icon_url='https://thumbs.dreamstime.com/b/warning-sign-line-icon-linear-style-mobile-concept-web-design-exclamation-mark-outline-vector-alert-danger-hazard-163698246.jpg')
-    
-    
-     # Extract traceback information
-     traceback_info = traceback.format_exception(type(e), e, e.__traceback__)
-     traceback_str = ''.join(traceback_info)
-    
-     # Add traceback information to the embed
-     error_embed.add_field(
-        name="Traceback",
-        value=f'```{traceback_str}```',
-        inline=False
-     )
-    
-     # Get the last traceback frame from the exception
-     tb_frame = traceback.extract_tb(e.__traceback__)[-1]
-     file_location = tb_frame.filename  # File location
-     line_number = tb_frame.lineno  # Line number
+    async def play(ctx, *, song_name):
+        server_id = ctx.guild.id
+        if server_id not in server_loops:
+            server_loops[server_id] = False
 
-     error_embed.add_field(
-        name=" ",
-        value=f":warning: **Potential issue found:**\n- **File:** `{file_location}`\n- **Line:** `{line_number}`",
-        inline=False
-     )
-     error_embed.set_footer(icon_url=bot.user.avatar, text='Error Found')
 
-     # Send the error embed to the channel
-     await ctx.send(embed=error_embed)
+        file = discord.File("images/music.png", filename="thumbnail.png")
+        wait = await ctx.send(embed=pls_wait_embed, file=file)
+
+        if ctx.author.voice is None or ctx.author.voice.channel is None:
+            await wait.edit(embed=join_first_embed)
+            return
+
+        channel = ctx.author.voice.channel
+        voice_channel = ctx.voice_client
+
+        # Check if the bot is already in a voice channel
+        if voice_channel is None and channel is not None:
+            await wait.edit(embed=not_in_voice)
+            return
+        if not voice_channel.is_playing():
+            # Download the song information using yt_dlp
+            ydl_opts = {'format': 'bestaudio', 'noplaylist': True, 'no_warnings': True}
+            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(f"ytsearch:{song_name}", download=False)
+                video_url = info['entries'][0]['webpage_url']
+                if 'entries' in info and info['entries']:
+                    # Get the first entry (song) in the search results
+                    first_entry = info['entries'][0]
+
+                    # Extract the song name and video link and duration
+                    song_name = first_entry.get('title', 'Unknown Title')
+                    video_link = first_entry.get('url', 'Unknown Link')
+                    duration = first_entry.get('duration', 0)
+
+                    # Shorten the video link
+                    shortened_video_link = shorten_url(video_link)
+                    # Format the duration in a user-friendly way
+                    duration_formatted = str(round(duration / 60, 2)) + " minutes"
+
+                    # Play the song
+                    # Wrap the FFmpegPCMAudio source with PCMVolumeTransformer
+                    audio_source = discord.FFmpegPCMAudio(video_link, **FFMPEG_OPTIONS)
+                    volume_transformer = discord.PCMVolumeTransformer(audio_source, volume=0.5)  # Default volume at 50%
+
+                    voice_channel.play(volume_transformer)
+
+                    playing_embed = discord.Embed(
+                        title="LumianryAI - music",
+                        description=f"Now playing: {song_name}\n\n [Video link]({video_url}) \n[Audio link]({shortened_video_link})\n Song duration: {duration_formatted}",
+                        color=0x99ccff
+                    )
+                    file = discord.File("music.png", filename="thumbnail.png")
+                    playing_embed.set_thumbnail(url="attachment://thumbnail.png")
+                    await wait.edit(embed=playing_embed)
+                    await asyncio.sleep(duration)  # Wait for the song to finish
+                    loop = server_loops[server_id]  # Get loop status for the current server
+
+                    while loop:
+                        loop = server_loops[server_id]  # Get loop status for the current server
+                        if loop:
+                            voice_channel.stop()
+                            voice_channel.play(discord.FFmpegPCMAudio(video_link, **FFMPEG_OPTIONS))
+                            await asyncio.sleep(duration)  # Wait for the song to finish
+                        elif loop == False and not voice_channel.is_playing():
+                            await ctx.voice_client.disconnect()
+                            break
+                else:
+                    await wait.edit(embed=no_result_embed)
+
+        else:
+            await wait.edit(embed=alread_playing)
 
     @bot.command(name='leave')
     @commands.cooldown(1, 10, commands.BucketType.user)
