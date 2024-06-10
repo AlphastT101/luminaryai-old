@@ -19,3 +19,4 @@ PyNaCl
 psutil
 cryptography
 geopy
+pillow
