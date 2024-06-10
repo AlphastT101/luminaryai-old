@@ -20,3 +20,4 @@ psutil
 cryptography
 geopy
 pillow
+imagehash
