@@ -3,12 +3,17 @@ import io
 import random
 from urllib.parse import quote
 from openai import AsyncOpenAI
+from PIL import Image
+import requests
+from io import BytesIO
 import requests
 from dotenv import load_dotenv
 import asyncio
 from bot_utilities.prompt_sys import prompt
 import yaml
 from bot_utilities.start_util import *
+import imagehash
+
 
 
 filename_to_encrypt = '.env'
@@ -270,11 +275,87 @@ def web_search(query):
 
     except requests.RequestException as e:
         return f"An error occurred: {e}"
+
+
+
+# Define your Google Custom Search API key and search engine ID
+API_KEY = 'AIzaSyBNCNpIH26nsO_umj1LHMSMCo1jzmgkuaI'
+SEARCH_ENGINE_ID = 'a1d15feaa6af94024'
+
+# Function to search for images
+def search_image(query):
+    search_url = f"https://www.googleapis.com/customsearch/v1?key={API_KEY}&cx={SEARCH_ENGINE_ID}&searchType=image&q={query}"
+
+    try:
+        response = requests.get(search_url)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Extract image URLs from the search results
+        image_urls = [item['link'] for item in data.get('items', [])[:10]]
+        
+        return image_urls
+    except requests.exceptions.RequestException as e:
+        print(f"Error searching for images: {e}")
+        return None
+
+
+def create_composite_image(image_urls, images_per_row=5, spacing=10, target_size=(256, 256)):
+    images = []
+    hashes = set()
+
+    for url in image_urls:
+        try:
+            response = requests.get(url)
+            img = Image.open(BytesIO(response.content))
+            img = img.resize(target_size, Image.LANCZOS)
+            img_hash = imagehash.average_hash(img)
+
+            if img_hash not in hashes:
+                hashes.add(img_hash)
+                images.append(img)
+            else:
+                print(f"Skipped image: {url} - Duplicate image detected")
+        except Exception as e:
+            print(f"Skipped image: {url} - Cannot identify image: {e}")
+
+    if not images:
+        print("No valid images found.")
+        return None
+
+    # Calculate dimensions for composite image
+    img_width, img_height = target_size
+    row_height = img_height + spacing
+    total_rows = (len(images) + images_per_row - 1) // images_per_row
+    composite_width = img_width * images_per_row + spacing * (images_per_row - 1)
+    composite_height = row_height * total_rows
+
+    # Create the composite image
+    composite_image = Image.new('RGBA', (composite_width, composite_height), color=(255, 255, 255, 0))
+
+    # Paste images onto the composite image
+    x_offset = 0
+    y_offset = 0
+    for i, img in enumerate(images):
+        composite_image.paste(img, (x_offset, y_offset))
+        x_offset += img_width + spacing
+        if (i + 1) % images_per_row == 0:
+            y_offset += row_height
+            x_offset = 0
+
+    # Create the directory if it doesn't exist
+    directory = 'luminaryai/images'
+    os.makedirs(directory, exist_ok=True)
+
+    # Save the composite image
+    file_path = os.path.join(directory, 'composite_image.png')
+    composite_image.save(file_path)
+
+    # Log the link to the file
+    print(f"Composite image saved at: {os.path.abspath(file_path)}")
+
+    return file_path
     
-
-
-
-
 async def vision(prompt, image_link):
     try:
         response = await openai_client.chat.completions.create(
