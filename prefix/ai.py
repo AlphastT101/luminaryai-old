@@ -3,7 +3,7 @@ from discord import Embed
 from discord.ext import commands
 import io
 import random
-from bot_utilities.ai_utils import generate_response_cmd, poly_image_gen, generate_image_prodia, sdxl, search_photo, web_search
+from bot_utilities.ai_utils import *
 import aiohttp
 import datetime
 import json
@@ -150,23 +150,37 @@ def ai(bot, member_histories_msg, mongodb):
 
 
     @bot.command(name="search")
-    @commands.cooldown(1, 30, commands.BucketType.user)
-    async def search(ctx,*, query: str = None):
+    @commands.cooldown(1, 1, commands.BucketType.user)
+    async def search(ctx, *, query: str = None):
         if query is None:
             await embed(ctx, "LuminaryAI - Web search", "Please enter your prompt", color=0x99ccff)
             return
+
         result = web_search(query)
         if result == "":
             result = "No results found"
+
+        image_urls = search_image(query)
+        if not image_urls:
+            await ctx.send("No results found")
+            return
+
+        file_path = create_composite_image(image_urls)
         web_embed = discord.Embed(
-            title="Luminary - web search",
-            description=result,
-            color=0x99ccff
+            title=f"Luminary - Web Search",
+            description=f"- ```Query: {query}```\n> {result}",
+            color=0x99ccff,
+            timestamp=ctx.message.created_at
         )
-        file = discord.File("images/web_search.png", filename="web_search.png")
-        web_embed.set_thumbnail(url="attachment://web_search.png")
-        web_embed.set_footer(text="Thanks for using LumianryAI!", icon_url=bot.user.avatar.url)
-        await ctx.reply(embed=web_embed, file=file)
+
+        file_composite = discord.File(file_path, filename="composite_image.png")
+        file_web_search = discord.File('luminaryai/images/web_search.png', filename='web_search.png')
+
+        web_embed.set_thumbnail(url='attachment://web_search.png')
+        web_embed.set_image(url="attachment://composite_image.png")
+        web_embed.set_footer(text="Thanks for using LuminaryAI!", icon_url=bot.user.avatar.url)
+
+        await ctx.reply(embed=web_embed, files=[file_composite, file_web_search])
 
     @bot.command(name='imagine.p')
     @commands.cooldown(1, 40, commands.BucketType.user)
