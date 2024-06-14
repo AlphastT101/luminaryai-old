@@ -1,5 +1,6 @@
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
+from dotenv import load_dotenv
 import os
 
 def gen_key(file_path, size_in_mb):
@@ -61,3 +62,36 @@ def is_file_encrypted(filename):
     except IOError:
         print("File not accessible or doesn't exist.")
         return False
+    
+def collect_data_ai(file, pwd, pwd_size):
+    if is_file_encrypted(file):
+        key = get_key(pwd)
+        decrypt_aes(key, file)
+        load_dotenv(dotenv_path="envv.env")
+        GPT_KEY = os.getenv('GPT_KEY')
+        new_key = gen_key(pwd, pwd_size)
+        encrypt_aes(new_key, file)
+    else:
+        load_dotenv(dotenv_path="envv.env")
+        GPT_KEY = os.getenv('GPT_KEY')
+        new_key = gen_key(pwd, pwd_size)
+        encrypt_aes(new_key, file)
+    return GPT_KEY
+
+def collect_data_start(file, pwd, pwd_size):
+    if is_file_encrypted(file):
+        key = get_key(pwd)
+        decrypt_aes(key, file)
+        load_dotenv(dotenv_path="envv.env")
+        bot_token = os.getenv('BOT_TOKEN')
+        mongodb = os.getenv('MONGODB')
+        new_key = gen_key(pwd, pwd_size)
+        encrypt_aes(new_key, file)
+    else:
+        load_dotenv(dotenv_path="envv.env")
+        bot_token = os.getenv('BOT_TOKEN')
+        mongodb = os.getenv('MONGODB')
+        new_key = gen_key(pwd, pwd_size)
+        encrypt_aes(new_key, file)
+
+    return mongodb, bot_token

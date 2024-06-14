@@ -156,6 +156,16 @@ def ai(bot, member_histories_msg, mongodb):
             await embed(ctx, "LuminaryAI - Web search", "Please enter your prompt", color=0x99ccff)
             return
 
+        wait = discord.Embed(
+            title="LuminaryAI - loading",
+            description="Please wait while i process your request.",
+            timestamp=ctx.message.created_at,
+            color=0x99ccff,
+        )
+        wait.set_footer(text=f"Thanks for using {bot.user}!", icon_url=bot.user.avatar.url)
+        file_web_search = discord.File('images/web_search.png', filename='web_search.png')
+        wait.set_thumbnail(url='attachment://web_search.png')
+        wait = await ctx.send(embed=wait, file=file_web_search)
         result = web_search(query)
         if result == "":
             result = "No results found"
@@ -168,18 +178,19 @@ def ai(bot, member_histories_msg, mongodb):
         file_path = create_composite_image(image_urls)
         web_embed = discord.Embed(
             title=f"Luminary - Web Search",
-            description=f"- ```Query: {query}```\n> {result}",
+            description=f"{result}",
             color=0x99ccff,
             timestamp=ctx.message.created_at
         )
 
         file_composite = discord.File(file_path, filename="composite_image.png")
-        file_web_search = discord.File('luminaryai/images/web_search.png', filename='web_search.png')
+        file_web_search = discord.File('images/web_search.png', filename='web_search.png')
 
         web_embed.set_thumbnail(url='attachment://web_search.png')
         web_embed.set_image(url="attachment://composite_image.png")
         web_embed.set_footer(text="Thanks for using LuminaryAI!", icon_url=bot.user.avatar.url)
 
+        await wait.delete()
         await ctx.reply(embed=web_embed, files=[file_composite, file_web_search])
 
     @bot.command(name='imagine.p')

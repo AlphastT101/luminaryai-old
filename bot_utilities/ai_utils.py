@@ -7,33 +7,18 @@ from PIL import Image
 import requests
 from io import BytesIO
 import requests
-from dotenv import load_dotenv
 import asyncio
 from bot_utilities.prompt_sys import prompt
 import yaml
-from bot_utilities.start_util import *
+import os
+from bot_utilities.start_util import collect_data_ai
 import imagehash
-
-
-filename_to_encrypt = '.env'
-file_to_save_key = 'binary'
-key_size = 50
-if is_file_encrypted(filename_to_encrypt):
-    key = get_key(file_to_save_key)
-    decrypt_aes(key, filename_to_encrypt)
-    load_dotenv()
-    GPT_KEY = os.getenv('GPT_KEY')
-    new_key = gen_key(file_to_save_key, 50)
-    encrypt_aes(new_key, filename_to_encrypt)
-else:
-    load_dotenv()
-    GPT_KEY = os.getenv('GPT_KEY')
-    new_key = gen_key(file_to_save_key, 50)
-    encrypt_aes(new_key, filename_to_encrypt)
 
 
 with open("config.yml", "r") as config_file:
     config = yaml.safe_load(config_file)
+
+GPT_KEY = collect_data_ai("envv.env", "binary", 50)
 GPT_MODEL = config["bot"]["text_model"]
 image_model = config["bot"]["image_model"]
 request_queue = asyncio.Queue()
@@ -53,26 +38,6 @@ async def sdxl(prompt):
     return response.data[0].url
 
 
-
-
-def fetch_chat_models():
-    models = []
-    headers = {
-        'Authorization': f'Bearer {GPT_KEY}',
-        'Content-Type': 'application/json'
-    }
-
-    response = requests.get('https://api.naga.ac/v1/models', headers=headers)
-    if response.status_code == 200:
-        ModelsData = response.json()
-        models.extend(
-            model['id']
-            for model in ModelsData.get('data')
-            if "max_images" not in model
-        )
-    else:
-        print(f"Failed to fetch chat models. Status code: {response.status_code}")
-    return models
     
 async def generate_response_cmd(ctx, user_input, history=[]):
 
@@ -276,7 +241,7 @@ def web_search(query):
         return f"An error occurred: {e}"
     
 
-# Define your Google Custom Search API key and search engine ID
+
 API_KEY = 'AIzaSyBNCNpIH26nsO_umj1LHMSMCo1jzmgkuaI'
 SEARCH_ENGINE_ID = 'a1d15feaa6af94024'
 
@@ -288,8 +253,6 @@ def search_image(query):
         response = requests.get(search_url)
         response.raise_for_status()
         data = response.json()
-        
-        # Extract image URLs from the search results
         image_urls = [item['link'] for item in data.get('items', [])[:10]]
         
         return image_urls
@@ -315,20 +278,18 @@ def create_composite_image(image_urls, images_per_row=5, spacing=10, target_size
             else:
                 print(f"Skipped image: {url} - Duplicate image detected")
         except Exception as e:
-            print(f"Skipped image: {url} - Cannot identify image: {e}")
+            # print(f"Skipped image: {url} - Cannot identify image: {e}")
+            return
 
     if not images:
         print("No valid images found.")
         return None
 
-    # Calculate dimensions for composite image
     img_width, img_height = target_size
     row_height = img_height + spacing
     total_rows = (len(images) + images_per_row - 1) // images_per_row
     composite_width = img_width * images_per_row + spacing * (images_per_row - 1)
     composite_height = row_height * total_rows
-
-    # Create the composite image
     composite_image = Image.new('RGBA', (composite_width, composite_height), color=(255, 255, 255, 0))
 
     # Paste images onto the composite image
@@ -341,16 +302,11 @@ def create_composite_image(image_urls, images_per_row=5, spacing=10, target_size
             y_offset += row_height
             x_offset = 0
 
-    # Create the directory if it doesn't exist
-    directory = 'luminaryai/images'
+
+    directory = 'cache'
     os.makedirs(directory, exist_ok=True)
-
-    # Save the composite image
-    file_path = os.path.join(directory, 'composite_image.png')
+    file_path = os.path.join(directory, f'composite_image.png')
     composite_image.save(file_path)
-
-    # Log the link to the file
-    print(f"Composite image saved at: {os.path.abspath(file_path)}")
 
     return file_path
 

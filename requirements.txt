@@ -10,7 +10,6 @@ PyPDF2
 python-docx
 tqdm
 pyshorteners
-aiml
 yt_dlp
 fake-useragent
 pillow

@@ -2,3 +2,4 @@ bot:
   prefix: "ai."
   text_model: "gemini-pro"
   image_model: "playground-v2.5"
+  encryption_key_size: 50
