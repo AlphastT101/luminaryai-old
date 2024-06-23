@@ -92,7 +92,7 @@ for command in bot.commands:
     cmd_prefix = "ai." + command.name
     cmd_list.append(cmd_prefix)
 
-on_messages(bot, cmd_list, member_histories_msg, client)
+# on_messages(bot, cmd_list, member_histories_msg, client)
 
 
 
@@ -138,8 +138,8 @@ async def on_ready():
     print(f'We have logged in as {bot.user}')
     print(f"\033[1;38;5;202mAvailable models: {model_blob}\033[0m")
     print(f"\033[1;38;5;46mCurrent model: {os.getenv('GPT_MODEL')}\033[0m")
-    client.admin.command('ping')
-    print("Pinged your deployment. You successfully connected to MongoDB!")
+    # client.admin.command('ping')
+    # print("Pinged your deployment. You successfully connected to MongoDB!")
     sync_slash_cmd.start()
     update_bio.start()
     asyncio.create_task(process_queue())
@@ -161,4 +161,4 @@ async def on_guild_remove(guild):
 
 
 
-bot.run(bot_token)
+bot.run('MTE3NzY3MDAwMTcwMDkwOTA4Ng.GG46dv.7n8xstQz3MqTxzFfZF8qypk4xBIEWS1p58Ycww')

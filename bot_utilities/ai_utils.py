@@ -3,7 +3,8 @@ import io
 import random
 from urllib.parse import quote
 from openai import AsyncOpenAI
-from PIL import Image
+from PIL import Image, ImageSequence
+
 import requests
 from io import BytesIO
 import requests
@@ -13,6 +14,10 @@ from bot_utilities.prompt_sys import prompt
 import yaml
 from bot_utilities.start_util import *
 import imagehash
+import gifmaker
+import numpy as np
+import cv2
+from skimage.metrics import structural_similarity as ssim
 
 
 
@@ -40,7 +45,7 @@ image_model = config["bot"]["image_model"]
 request_queue = asyncio.Queue()
 
 openai_client = AsyncOpenAI(
-    api_key = GPT_KEY,
+    api_key = 'ng-YgkaT8abn2sWaqZRUmVPzs07BdtrE',
     base_url = "https://api.naga.ac/v1"
 )
 
@@ -299,38 +304,60 @@ def search_image(query):
         print(f"Error searching for images: {e}")
         return None
 
-
 def create_composite_image(image_urls, images_per_row=5, spacing=10, target_size=(256, 256)):
     images = []
     hashes = set()
+    buffers = []
+
+    def is_duplicate(img_hash, img_cv):
+        # Check using imagehash
+        if img_hash in hashes:
+            return True
+        
+        # Check using OpenCV for structural similarity
+        for buffer in buffers:
+            similarity = cv2.matchTemplate(buffer, img_cv, cv2.TM_CCOEFF_NORMED)
+            if np.max(similarity) > 0.15:  # Adjust similarity threshold as needed
+                return True
+        
+        return False
 
     for url in image_urls:
         try:
             response = requests.get(url)
             img = Image.open(BytesIO(response.content))
             img = img.resize(target_size, Image.LANCZOS)
+            
+            # Convert image to numpy array for OpenCV
+            img_cv = np.array(img)
+            img_cv = cv2.cvtColor(img_cv, cv2.COLOR_RGB2BGR)
+            
+            # Calculate image hash
             img_hash = imagehash.average_hash(img)
 
-            if img_hash not in hashes:
-                hashes.add(img_hash)
-                images.append(img)
-            else:
+            # Check for duplicates
+            if is_duplicate(img_hash, img_cv):
                 print(f"Skipped image: {url} - Duplicate image detected")
+                continue
+
+            # Add image and buffer if not duplicate
+            hashes.add(img_hash)
+            images.append(img)
+            buffers.append(img_cv)
+
         except Exception as e:
             print(f"Skipped image: {url} - Cannot identify image: {e}")
+            continue
 
     if not images:
         print("No valid images found.")
         return None
 
-    # Calculate dimensions for composite image
     img_width, img_height = target_size
     row_height = img_height + spacing
     total_rows = (len(images) + images_per_row - 1) // images_per_row
     composite_width = img_width * images_per_row + spacing * (images_per_row - 1)
     composite_height = row_height * total_rows
-
-    # Create the composite image
     composite_image = Image.new('RGBA', (composite_width, composite_height), color=(255, 255, 255, 0))
 
     # Paste images onto the composite image
@@ -343,19 +370,19 @@ def create_composite_image(image_urls, images_per_row=5, spacing=10, target_size
             y_offset += row_height
             x_offset = 0
 
-    # Create the directory if it doesn't exist
-    directory = 'luminaryai/images'
+    directory = 'cache'
     os.makedirs(directory, exist_ok=True)
-
-    # Save the composite image
-    file_path = os.path.join(directory, 'composite_image.png')
+    file_path = os.path.join(directory, f'composite_image.png')
     composite_image.save(file_path)
 
-    # Log the link to the file
-    print(f"Composite image saved at: {os.path.abspath(file_path)}")
-
     return file_path
-    
+
+
+
+
+
+
+
 async def vision(prompt, image_link):
     try:
         response = await openai_client.chat.completions.create(

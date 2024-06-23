@@ -21,3 +21,4 @@ cryptography
 geopy
 pillow
 imagehash
+pymongo

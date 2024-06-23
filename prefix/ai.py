@@ -8,7 +8,7 @@ import aiohttp
 import datetime
 import json
 from bot_utilities.owner_utils import *
-
+import time
 async def embed(ctx ,title, description, color):
     embed = discord.Embed(title=title, description=description, color=color)
     await ctx.send(embed=embed)
@@ -152,46 +152,46 @@ def ai(bot, member_histories_msg, mongodb):
     @bot.command(name="search")
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def search(ctx, *, query: str = None):
-     if query is None:
-        await embed(ctx, "LuminaryAI - Web search", "Please enter your prompt", color=0x99ccff)
-        return
-    
-     result = web_search(query)
-     if result == "":
-        result = "No results found"
-    
-     image_urls = search_image(query)
-     if not image_urls:
-        await ctx.send("No results found")
-        return
-    
-     print(image_urls)
+        if query is None:
+            await embed(ctx, "LuminaryAI - Web search", "Please enter your prompt", color=0x99ccff)
+            return
 
-     # Create the composite image
-     file_path = create_composite_image(image_urls)
-    
-     # Prepare the embed
-     web_embed = discord.Embed(
-        title=f"Luminary - Web Search",
-        description=f"- ```Query: {query}```\n> {result}",
-        color=0x99ccff,
-        timestamp=ctx.message.created_at
-     )
+        wait = discord.Embed(
+             title="LuminaryAI - Loading",
+             description="**:hourglass: Please wait while I process your request**.",
+             # timestamp=ctx.message.created_at if ctx.message else discord.Embed.Empty,  # Ensure ctx.message exists
+             color=0x99ccff
+             )
+        wait.set_footer(text=f"Thanks for using {bot.user}!", icon_url=bot.user.avatar.url)
+        file_web_search = discord.File('images/web_search.png', filename='web_search.png')
+        wait.set_thumbnail(url='attachment://web_search.png')
+        wait = await ctx.send(embed=wait, file=file_web_search)
+        time.sleep(3)
+        result = web_search(query)
+        if result == "":
+            result = "No results found"
 
+        image_urls = search_image(query)
+        if not image_urls:
+            await ctx.send("No results found")
+            return
 
-     # Load the composite image and the web search image
-     file_composite = discord.File(file_path, filename="composite_image.png")
-     file_web_search = discord.File('luminaryai/images/web_search.png', filename='web_search.png')
-    
-     # Set images in the embed
-     web_embed.set_thumbnail(url='attachment://web_search.png')
-     web_embed.set_image(url="attachment://composite_image.png")
+        file_path = create_composite_image(image_urls)
+        web_embed = discord.Embed(
+            title=f"Luminary - Web Search",
+            description=f"{result}",
+            color=0x99ccff,
+            timestamp=ctx.message.created_at
+        )
 
-     # Set the footer with the bot's avatar
-     web_embed.set_footer(text="Thanks for using LuminaryAI!", icon_url=bot.user.avatar.url)
+        file_composite = discord.File(file_path, filename="composite_image.png")
+        file_web_search = discord.File('images/web_search.png', filename='web_search.png')
 
-     # Send the embed with both files
-     await ctx.reply(embed=web_embed, files=[file_composite, file_web_search])
+        web_embed.set_image(url="attachment://composite_image.png")
+        web_embed.set_footer(text="Thanks for using LuminaryAI!", icon_url=bot.user.avatar.url)
+
+        await wait.delete()
+        await ctx.reply(embed=web_embed, files=[file_composite])
 
     @bot.command(name='imagine.p')
     @commands.cooldown(1, 40, commands.BucketType.user)
