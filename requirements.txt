@@ -22,3 +22,5 @@ geopy
 pillow
 imagehash
 pymongo
+opencv-python-headless
+scikit-image

@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands, tasks
-from discord.ui import Select, View
+from discord.ui import Select, View, Button
+
 import datetime
 import time
 import psutil
@@ -594,158 +595,210 @@ def bbot(bot, start_time, mongodb):
             await ctx.send("**invalid command**",delete_after=3)
 
     
+    
 
-
-    @bot.command(name="help")
-    @commands.cooldown(1, 60, commands.BucketType.user)
+    @bot.command(name="help")         
     async def developer(ctx):
-        embed_bot = discord.Embed(
-            title="Bot related commands",
-            color=0x99ccff  # Convert hex color to integer
-        )
-        embed_bot.add_field(name="`developer {choice}`", value="Enable developer mode. choices - true & false", inline=False)
-        embed_bot.add_field(name="`about`", value="about the bot", inline=False)
-        embed_bot.add_field(name="`help`", value="command list", inline=False)
-        embed_bot.add_field(name="`uptime`", value="Bot uptime", inline=False)
-        embed_bot.add_field(name="`support`", value="Support server link", inline=False)
-        embed_bot.add_field(name="`owner`", value="shows owner of the bot", inline=False)
+     # Function to get a chunk of commands
+     def get_chunk(embed, commands_list, start, count=5):
+        embed.clear_fields()
+        for name, value in commands_list[start:start + count]:
+            embed.add_field(name=name, value=value, inline=False)
+        current_page = (start // count) + 1
+        total_pages = (len(commands_list) + count - 1) // count
+        embed.set_footer(text=f"Page {current_page} of {total_pages}")
+        return embed
+
+     bot_related_commands = [
+        ("developer {choice}", "❯ Enable developer mode. choices - true & false"),
+        ("about", "❯ About the bot"),
+        ("help", "❯ Command list"),
+        ("uptime", "❯ Bot uptime"),
+        ("support", "❯ Support server link"),
+        ("owner", "❯ Shows owner of the bot")
+     ]
+
+     ai_commands = [
+        ('ai.imagine {prompt}', "❯ Generates images using SDXL according to user-inputs. We prefer to use the slash command `/imagine`"),
+        ('ai.imagine.p {prompt}', "❯ Generates images using pollinations.ai according to user-inputs. We prefer to use the slash command `/imagine`"),
+        ('ai.response {prompt}', "❯ Generates answers according to user-inputs. Message history available"),
+        ('ai.aiml.start', "❯ Enable AIML responses, You need a role with manage messages to run this command."),
+        ('ai.aiml.stop', "❯ Disable AIML responses, You need a role with manage messages to run this command."),
+        ('ai.activate **[DISABLED]**', "❯ Enable AI responses, You need a role with manage messages to run this command.\nModel: *Luminary*"),
+        ('ai.deactivate **[DISABLED]**', "❯ Disable AI responses, You need a role with manage messages to run this command."),
+        ('ai.searchimg {prompt}', "❯ Search the web for images."),
+        ('ai.search {prompt}', "❯ Search the web."),
+        ('ai.vision {prompt}', "❯ Vision an image."),
+        ('@luminaryai {prompt}', "❯ Ping LuminaryAI to generate text and images."),
+        ('@luminaryai activate', "❯ Enable AI responses using Luminary-ultra. You need admin permissions to run this command."),
+        ('@luminaryai deactivate', "❯ Disable AI responses. You need admin permissions to run this command.")
+     ]
+
+     general_commands = [
+        ('ai.user {mention}', "❯ Shows username & avatar. if you enable developer mode, then it also displays userID, account creation date & guild join date.")
+     ]
+
+     fun_commands = [
+        ('ai.rps {your move}`', "❯ Play RPS with the bot"),
+        ('ai.cat', "❯ Shows a cat"),
+        ('ai.randomfact', "❯ Shows a random fact")
+     ]
+
+     moderation_commands = [
+        ('ai.purge {number of messages}', "❯ Purge messages, you need proper permissions to use this command."),
+        ('ai.ban {user} {reason}', "❯ Ban a member, you need the ban members permission to take this action."),
+        ('ai.unban {user} {reason}', "❯ Unban a member."),
+        ('ai.kick {user} {reason}', "❯ Kick a member."),
+        ('ai.purgefiles {amount of messages}', "❯ Purge messages that contain files/attachments."),
+        ('ai.purgelinks {amount of messages}', "❯ Purge messages that contain links."),
+        ('ai.unmute {member} {reason}', "❯ Unmute/remove time out from a member."),
+        ('ai.timeout {user} {duration} {reason}', "❯ Timeout a member. A valid time duration required.(eg. 1d,10m,5h)")
+     ]
+
+     automod_commands = [
+        # Placeholder for future commands
+     ]
+
+     admin_commands = [
+        # Placeholder for future commands
+     ]
+
+     music_commands = [
+        ('ai.join', "❯ Join your voice channel"),
+        ('ai.play {song name}', "❯ Play a song from the internet"),
+        ('ai.loop', "❯ Enable loop"),
+        ('ai.stop', "❯ Stop the playback"),
+        ('ai.resume', "❯ Resume the playback"),
+        ('ai.pause', "❯ Pause the playback"),
+        ('ai.volume', "❯ Increase or decrease the volume of the playback."),
+        ('ai.leave', "❯ Stop the playback and leave. **Do NOT force LuminaryAI to leave the voice channel. Just use this command.**")
+     ]
+
+     embed_bot = discord.Embed(
+        title="Bot related commands",
+        color=0x99ccff  # Convert hex color to integer
+     )
+
+     embed_ai = discord.Embed(
+        title="AI commands",
+        color=0x99ccff  # Convert hex color to integer
+     )
+
+     embed_general = discord.Embed(
+        title="General commands",
+        color=0x99ccff  # Convert hex color to integer
+     )
+
+     embed_fun = discord.Embed(
+        title="Fun commands",
+        color=0x99ccff  # Convert hex color to integer
+     )
+
+     embed_moderation = discord.Embed(
+        title="Moderation commands",
+        color=0x99ccff  # Convert hex color to integer
+     )
+
+     embed_automod = discord.Embed(
+        title="Automod commands - under development",
+        color=0x99ccff  # Convert hex color to integer
+     ) 
+
+     embed_admin = discord.Embed(
+        title="Admin commands - under development",
+        color=0x99ccff  # Convert hex color to integer
+     )
+
+     embed_music = discord.Embed(
+        title="Music commands",
+        color=0x99ccff  # Convert hex color to integer
+     )
+
+     help_select = Select(placeholder="Make a selection", options=[
+        discord.SelectOption(label="Bot related", emoji="🤖", description="Bot related commands"),
+        discord.SelectOption(label="AI", emoji="✨", description="AI commands"),
+        discord.SelectOption(label="General", emoji="🪶", description="General commands"),
+        discord.SelectOption(label="Fun", emoji="😂", description="Fun commands"),
+        discord.SelectOption(label="Moderation", emoji="🛠️", description="Moderation commands"),
+        discord.SelectOption(label="Automod", emoji="⚒️", description="Automod commands"),
+        discord.SelectOption(label="Admin", emoji="⚙️", description="Admin commands"),
+        discord.SelectOption(label="Music", emoji="🎧", description="Music commands"),
+     ])
+
+     help_view = View()
+     help_view.add_item(help_select)
+     about_bot = "LuminaryAI is like a smart friend on Discord, using a powerful AI engine called 'Luminary' made by AlphasT101. It's here to help everyone in the Discord group with anything you need."
+     help_embbed = discord.Embed(
+        title="LuminaryAI - Help",
+        description=f"{about_bot}\n\n[support server](<https://discord.com/invite/hmMBe8YyJ4>)\n[Invite bot](<https://discord.com/oauth2/authorize?client_id=1110111253256482826&permissions=8&scope=bot>)",
+        color=0x99ccff  # Convert hex color to integer
+     )
+     help_embbed.set_thumbnail(url=bot.user.avatar)
+     help_msg = await ctx.send(embed=help_embbed, view=help_view)
+
+     # Pagination buttons
+     buttons = [
+        Button(label="Previous", style=discord.ButtonStyle.primary, custom_id='Previous'),
+        Button(label="Next", style=discord.ButtonStyle.primary, custom_id='Next')
+     ]
+
+     help_view.add_item(buttons[0])
+     help_view.add_item(buttons[1])
+
+     # Variables to track current state
+     current_page = 0
+     current_commands = bot_related_commands
+     embed = embed_bot
+
+     # Callback for the select menu
+     async def help_callback(interaction):
 
 
+        nonlocal current_page, current_commands, embed
 
+        if help_select.values[0] == "Bot related":
+            current_commands = bot_related_commands
+            embed = embed_bot
+        elif help_select.values[0] == "AI":
+            current_commands = ai_commands
+            embed = embed_ai
+        elif help_select.values[0] == "General":
+            current_commands = general_commands
+            embed = embed_general
+        elif help_select.values[0] == "Fun":
+            current_commands = fun_commands
+            embed = embed_fun
+        elif help_select.values[0] == "Moderation":
+            current_commands = moderation_commands
+            embed = embed_moderation
+        elif help_select.values[0] == "Automod":
+            current_commands = automod_commands
+            embed = embed_automod
+        elif help_select.values[0] == "Admin":
+            current_commands = admin_commands
+            embed = embed_admin
+        elif help_select.values[0] == "Music":
+            current_commands = music_commands
+            embed = embed_music
 
-        embed_ai = discord.Embed(
-            title="AI commands",
-            color=0x99ccff  # Convert hex color to integer
-        )
-        embed_ai.add_field(name='`ai.imagine {prompt}`', value="Generates images using SDXL according to user-inputes. We prefer to use the slash command `/imagine`", inline=False)
-        embed_ai.add_field(name='`ai.imagine.p {prompt}`', value="Generates images using pollinations.ai according to user-inputes. We prefer to use the slash command `/imagine`", inline=False)
-        embed_ai.add_field(name='`ai.response {prompt}`', value="Generates answers according to user-inputes. Message history available", inline=False)
-        embed_ai.add_field(name='`ai.aiml.start`', value="Enable AIML responses, You need a role with manage messages to run this command.", inline=False)
-        embed_ai.add_field(name='`ai.aiml.stop`', value="Disable AIML responses, You need a role with manage messages to run this command.", inline=False)
-        embed_ai.add_field(name='`ai.activate` **[DISABLED]**', value="Enable AI responses, You need a role with manage messages to run this command.\nModel: *Luminary*", inline=False)
-        embed_ai.add_field(name='`ai.deactivate` **[DISABLED]**', value=" Disable AI responses, You need a role with manage messages to run this command.", inline=False)
-        embed_ai.add_field(name='`ai.searchimg {prompt}`', value="Search the web for images.", inline=False)
-        embed_ai.add_field(name='`ai.search {prompt}`', value="Search the web.", inline=False)
-        embed_ai.add_field(name='`ai.vision {prompt}`', value="Vision an image.", inline=False)
-        embed_ai.add_field(name='`@luminaryai {prompt}`', value="Ping LuminaryAI to generate text and images.", inline=False)
-        embed_ai.add_field(name='`@luminaryai activate`', value="Enable AI responses using Luminary-ultra. You need admin permissions to run this command.", inline=False)
-        embed_ai.add_field(name='`@luminaryai deactivate`', value="Disable AI responses. You need admin permissions to run this command..", inline=False)
+        current_page = 0  # Reset to the first page
+        embed = get_chunk(embed, current_commands, current_page * 5)
+        await interaction.response.defer()
+        await help_msg.edit(embed=embed, view=help_view)
+     help_select.callback = help_callback
+     # Callback for the buttons
+     async def button_callback(interaction):
+      nonlocal current_page, current_commands, embed
 
+      if interaction.data["custom_id"] == "Previous":
+        current_page = max(current_page - 1, 0)
+      elif interaction.data["custom_id"] == "Next":
+        current_page = min(current_page + 1, (len(current_commands) - 1) // 5)
 
+      embed = get_chunk(embed, current_commands, current_page * 5)
+      await interaction.response.defer()
+      await help_msg.edit(embed=embed, view=help_view)
 
-        embed_general = discord.Embed(
-            title="general commands",
-            color=0x99ccff  # Convert hex color to integer
-        )
-        embed_general.add_field(name='`ai.user {mention}`', value="Shows username & avatar. if you enable developer mode, then it also displays userID, account creation date & guild join date.", inline=False)
+     for button in buttons:
+         button.callback = button_callback
 
-
-
-        embed_fun = discord.Embed(
-            title="fun commands",
-            color=0x99ccff  # Convert hex color to integer
-        )
-        embed_fun.add_field(name='`ai.rps {your move}`', value="play RPS with the bot", inline=False)
-        embed_fun.add_field(name='`ai.cat`', value="shows a cat", inline=False)
-        embed_fun.add_field(name='`ai.randomfact`', value="Shows a random fact", inline=False)
-
-
-
-        embed_moderation = discord.Embed(
-            title="Moderation commands",
-            color=0x99ccff  # Convert hex color to integer
-        )
-        embed_moderation.add_field(name='`ai.purge {number of messages}`', value="Purge messages, you need proper permissions to use this command.", inline=False)
-        embed_moderation.add_field(name='`ai.ban {user} {reason}`', value="Ban a member, you need the ban members permission to take this action.", inline=False)
-        embed_moderation.add_field(name='`ai.unban {user} {reason}`', value="Unban a member.", inline=False)
-        embed_moderation.add_field(name='`ai.kick {user} {reason}`', value="kick a member.", inline=False)
-        embed_moderation.add_field(name='`ai.purgefiles {amount of messages}`', value="Purge messages that contains files/attachments.", inline=False)
-        embed_moderation.add_field(name='`ai.purgelinks {amount of messages}`', value="Purge messages that contains links.", inline=False)
-        embed_moderation.add_field(name='`ai.unmute {member} {reason}`', value="Unmute/remove time out from a member.", inline=False)
-        embed_moderation.add_field(name='`ai.timeout {user} {duration} {reason}`', value="timeout a member. A valid time duration required.(eg. 1d,10m,5h)", inline=False)
-
-
-
-        embed_automod = discord.Embed(
-            title="automod commands - under development",
-            color=0x99ccff  # Convert hex color to integer
-        )
-
-
-
-        embed_admin = discord.Embed(
-            title="admin commands - under development",
-            color=0x99ccff  # Convert hex color to integer
-        )
-
-
-
-        embed_music = discord.Embed(
-            title="Music commands",
-            color=0x99ccff  # Convert hex color to integer
-        )
-        embed_music.add_field(name='`ai.join`', value="Join your voice channel", inline=False)
-        embed_music.add_field(name='`ai.play {song name}`', value="Play a song from internet", inline=False)
-        embed_music.add_field(name='`ai.loop`', value="Enable loop", inline=False)
-        embed_music.add_field(name='`ai.stop`', value="Stop the playback", inline=False)
-        embed_music.add_field(name='`ai.resume`', value="Resume the plaback", inline=False)
-        embed_music.add_field(name='`ai.pause`', value="Pause the playback", inline=False)
-        embed_music.add_field(name='`ai.volume`', value="Increase or decrease the volume of the playback.", inline=False)
-        embed_music.add_field(name='`ai.leave`', value="Stop the playback and leave. **Do NOT force LuminaryAI to leave the voice channel. Just use this command.**", inline=False)
-
-        help_select = Select(placeholder="Make a selection", options=[
-            discord.SelectOption(label="Bot related", emoji="🤖", description="Bot related commands"),
-            discord.SelectOption(label="AI", emoji="✨", description="AI commands"),
-            discord.SelectOption(label="General", emoji="🪶", description="General commands"),
-            discord.SelectOption(label="Fun", emoji="😂", description="Fun commands"),
-            discord.SelectOption(label="Moderation", emoji="🛠️", description="Moderation commands"),
-            discord.SelectOption(label="Automod", emoji="⚒️", description="Automod commands"),
-            discord.SelectOption(label="Admin", emoji="⚙️", description="Admin commands"),
-            discord.SelectOption(label="Music", emoji="🎧", description="Music commands"),
-        ])
-
-        help_view = View()
-        help_view.add_item(help_select)
-
-        help_embbed = discord.Embed(
-            title="LuminaryAI - help",
-            description="[support server](<https://discord.com/invite/hmMBe8YyJ4>)\n[Invite bot](<https://discord.com/oauth2/authorize?client_id=1110111253256482826&permissions=8&scope=bot>)\n\nLuminaryAI is like a smart friend on Discord, using a powerful AI engine called 'Luminary' made by AlphasT101. It's here to help everyone in the Discord group with anything you need.",
-            color=0x99ccff  # Convert hex color to integer
-        )
-        help_msg = await ctx.send(embed=help_embbed, view=help_view)
-        async def help_callback(interaction):
-            if help_select.values[0] == "Bot related":
-                await interaction.response.defer()
-                await help_msg.edit(embed=embed_bot, view=help_view)
-
-            elif help_select.values[0] == "AI":
-                await interaction.response.defer()
-                await help_msg.edit(embed=embed_ai, view=help_view)
-
-            elif help_select.values[0] == "General":
-                await interaction.response.defer()
-                await help_msg.edit(embed=embed_general, view=help_view)
-
-            elif help_select.values[0] == "Fun":
-                await interaction.response.defer()
-                await help_msg.edit(embed=embed_fun, view=help_view)
-
-            elif help_select.values[0] == "Moderation":
-                await interaction.response.defer()
-                await help_msg.edit(embed=embed_moderation, view=help_view)
-
-            elif help_select.values[0] == "Automod":
-                await interaction.response.defer()
-                await help_msg.edit(embed=embed_automod, view=help_view)
-
-            elif help_select.values[0] == "Admin":
-                await interaction.response.defer()
-                await help_msg.edit(embed=embed_admin, view=help_view)
-
-            elif help_select.values[0] == "Music":
-                await interaction.response.defer()
-                await help_msg.edit(embed=embed_music, view=help_view)
-
-
-
-        help_select.callback = help_callback

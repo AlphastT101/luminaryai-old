@@ -1,3 +1,5 @@
+import os 
+os.system('pip install -r requirements.txt')
 import discord
 from discord.ext import commands, tasks
 import os

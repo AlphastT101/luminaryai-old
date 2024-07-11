@@ -7,43 +7,44 @@ from PIL import Image, ImageSequence
 
 import requests
 from io import BytesIO
-import requests
 from dotenv import load_dotenv
 import asyncio
 from bot_utilities.prompt_sys import prompt
 import yaml
 from bot_utilities.start_util import *
 import imagehash
-import gifmaker
 import numpy as np
 import cv2
 from skimage.metrics import structural_similarity as ssim
 
 
-
-filename_to_encrypt = '.env'
-file_to_save_key = 'binary'
-key_size = 50
-if is_file_encrypted(filename_to_encrypt):
+"""
+ filename_to_encrypt = '.env'
+ file_to_save_key = 'binary'
+ key_size = 50
+ if is_file_encrypted(filename_to_encrypt): 
     key = get_key(file_to_save_key)
     decrypt_aes(key, filename_to_encrypt)
     load_dotenv()
     GPT_KEY = os.getenv('GPT_KEY')
     new_key = gen_key(file_to_save_key, 50)
     encrypt_aes(new_key, filename_to_encrypt)
-else:
+ else:
     load_dotenv()
     GPT_KEY = os.getenv('GPT_KEY')
     new_key = gen_key(file_to_save_key, 50)
     encrypt_aes(new_key, filename_to_encrypt)
 
 
-with open("config.yml", "r") as config_file:
+ with open("config.yml", "r") as config_file:
     config = yaml.safe_load(config_file)
-GPT_MODEL = config["bot"]["text_model"]
-image_model = config["bot"]["image_model"]
-request_queue = asyncio.Queue()
+ GPT_MODEL = config["bot"]["text_model"]
+ image_model = config["bot"]["image_model"]
+ request_queue = asyncio.Queue()
+ """
 
+
+GPT_KEY = 'ng-YgkaT8abn2sWaqZRUmVPzs07BdtrE'
 openai_client = AsyncOpenAI(
     api_key = 'ng-YgkaT8abn2sWaqZRUmVPzs07BdtrE',
     base_url = "https://api.naga.ac/v1"
@@ -290,14 +291,14 @@ SEARCH_ENGINE_ID = 'a1d15feaa6af94024'
 # Function to search for images
 def search_image(query):
     search_url = f"https://www.googleapis.com/customsearch/v1?key={API_KEY}&cx={SEARCH_ENGINE_ID}&searchType=image&q={query}"
-
+    amount = 20
     try:
         response = requests.get(search_url)
         response.raise_for_status()
         data = response.json()
         
         # Extract image URLs from the search results
-        image_urls = [item['link'] for item in data.get('items', [])[:10]]
+        image_urls = [item['link'] for item in data.get('items', [])[:amount]]
         
         return image_urls
     except requests.exceptions.RequestException as e:
