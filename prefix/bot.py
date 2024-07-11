@@ -606,7 +606,7 @@ def bbot(bot, start_time, mongodb):
             embed.add_field(name=name, value=value, inline=False)
         current_page = (start // count) + 1
         total_pages = (len(commands_list) + count - 1) // count
-        embed.set_footer(text=f"Page {current_page} of {total_pages}")
+        embed.set_footer(text=f"Page {current_page} of {total_pages} | Type ai.info <command> for more command information")
         return embed
 
      bot_related_commands = [
@@ -713,7 +713,26 @@ def bbot(bot, start_time, mongodb):
         title="Music commands",
         color=0x99ccff  # Convert hex color to integer
      )
+     """
+     # Set thumbnails for each embed
+     bot_thumbnail = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMqcwdPNaGunh0E1J4YV2O5ch0jbFPL8dw1Q&s"
+     ai_thumbnail = "https://www.nibib.nih.gov/sites/default/files/inline-images/AI%20600%20x%20400.jpg"
+     general_thumbnail = "https://example.com/general_thumbnail.png"
+     fun_thumbnail = "https://i.pinimg.com/736x/9e/80/9a/9e809ad17207f4a040855cd9ebe24713.jpg"
+     moderation_thumbnail = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfDhCKqD1Pusxa3sFILJsY0AaFvsN_E-14s9CBqyuq0tYV7_L1VWk2L9bhJPd83Fko6uw&usqp=CAU"
+     automod_thumbnail = "https://img.freepik.com/free-vector/robot-arm-concept-illustration_114360-8436.jpg?size=338&ext=jpg&ga=GA1.1.2008272138.1720483200&semt=sph"
+     admin_thumbnail = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQmO27HNo399ZS89SSJl3DfmfZjUhY-6Bm4Q&s"
+     music_thumbnail = "https://t3.ftcdn.net/jpg/02/23/60/54/360_F_223605406_nGKtPp42ZRx4ZxvrcVeT3Ek6V5Uw4ETh.jpg"
 
+     embed_bot.set_thumbnail(url=bot_thumbnail)
+     embed_ai.set_thumbnail(url=ai_thumbnail)
+     embed_general.set_thumbnail(url=general_thumbnail)
+     embed_fun.set_thumbnail(url=fun_thumbnail)
+     embed_moderation.set_thumbnail(url=moderation_thumbnail)
+     embed_automod.set_thumbnail(url=automod_thumbnail)
+     embed_admin.set_thumbnail(url=admin_thumbnail)
+     embed_music.set_thumbnail(url=music_thumbnail)
+    """
      help_select = Select(placeholder="Make a selection", options=[
         discord.SelectOption(label="Bot related", emoji="🤖", description="Bot related commands"),
         discord.SelectOption(label="AI", emoji="✨", description="AI commands"),
@@ -789,6 +808,7 @@ def bbot(bot, start_time, mongodb):
      # Callback for the buttons
      async def button_callback(interaction):
       nonlocal current_page, current_commands, embed
+
 
       if interaction.data["custom_id"] == "Previous":
         current_page = max(current_page - 1, 0)
