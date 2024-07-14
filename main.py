@@ -4,53 +4,56 @@ import os
 from pymongo.mongo_client import MongoClient
 import yaml
 import asyncio
-# from dotenv import load_dotenv
-from threading import Thread
+import threading
+import time, requests
 
-from slash.bot import *
-from slash.ai import *
+from slash.bot import bot_slash
+from slash.ai import ai_slash
 
-from prefix.bot import *
-from prefix.music import *
-from prefix.fun import *
-from prefix.general import *
-from prefix.ai import *
-from prefix.moderation import *
+from prefix.bot import bbot
+from prefix.music import music
+from prefix.fun import fun
+from prefix.general import general
+from prefix.ai import ai
+from prefix.moderation import moderation
 
-from events.on_cmd_error import *
-from events.on_messages import *
-from events.member_join import *
+from events.on_cmd_error import on_cmd_error
+from events.on_messages import on_messages
+from events.member_join import member_join
 
 from bot_utilities.ai_utils import process_queue
-from bot_utilities.start_util import *
-
 from api import app
+from bot_utilities.start_util import start
+
 
 def run_flask_app():
-    port = int(os.environ.get("PORT", 3000))
+    port = int(os.environ.get("PORT", config["flask"]["port"]))
     app.run(host='0.0.0.0', port=port, debug=False)
 
-with open("config.yml", "r") as config_file:
-    config = yaml.safe_load(config_file)
-mongodb, bot_token = collect_data_start("envv.env", "binary", 50)
 
+with open("config.yml", "r") as config_file: config = yaml.safe_load(config_file)
+mongodb = config["bot"]["mongodb"]
+client = MongoClient(mongodb)
+bot_token, api = start(client)
+
+flask_thread = None
 member_histories_msg = {}
+is_generating = {}
 intents = discord.Intents.all()
 intents.presences = False
 activity = discord.Game(name="/help")
 bot = commands.Bot(command_prefix=config["bot"]["prefix"], intents=intents, activity=activity, help_command=None, reconnect=False)
-client = MongoClient(mongodb)
 start_time = time.time()
 
 bbot(bot, start_time, client)
 music(bot)
 fun(bot)
 general(bot)
-ai(bot, member_histories_msg, client)
+ai(bot, member_histories_msg, client, is_generating)
 moderation(bot)
 
-bot_slash(bot, start_time)
-ai_slash(bot)
+bot_slash(bot, start_time, client)
+ai_slash(bot, client, member_histories_msg, is_generating)
 
 on_cmd_error(bot)
 member_join(bot)
@@ -101,7 +104,7 @@ async def on_ready():
     asyncio.create_task(process_queue())
 
     # Run Flask app in a separate thread
-    flask_thread = Thread(target=run_flask_app)
+    flask_thread = threading.Thread(target=run_flask_app, daemon=True)
     flask_thread.start()
     
     print("API Engine has been started!")
@@ -118,4 +121,7 @@ async def on_guild_remove(guild):
     embed = discord.Embed(title="Guild Left", description=f"The bot has left the server {guild.name}", color=0xff0000)
     await channel.send(embed=embed)
 
-bot.run(bot_token)
+
+
+try: bot.run(bot_token)
+except KeyboardInterrupt: exit(0)

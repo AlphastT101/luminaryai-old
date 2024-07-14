@@ -110,4 +110,3 @@ body {
   border-top-color: transparent; /* Creates a half-circle spinning effect */
   animation: spin 1.5s linear infinite; /* Slower animation for a calmer effect */
 }
-

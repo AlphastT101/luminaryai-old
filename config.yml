@@ -2,4 +2,8 @@ bot:
   prefix: "ai."
   text_model: "gemini-pro"
   image_model: "playground-v2.5"
-  encryption_key_size: 50
+  mongodb: ""
+flask:
+  port: 6077
+  guild_id: 1253765266115133442
+  send_req_channel: 1254053747227889785

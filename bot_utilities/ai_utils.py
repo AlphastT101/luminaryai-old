@@ -4,23 +4,27 @@ import random
 from urllib.parse import quote
 from openai import AsyncOpenAI
 from PIL import Image
+import os
+from pymongo.mongo_client import MongoClient
 import requests
 from io import BytesIO
 import requests
 import asyncio
 from bot_utilities.prompt_sys import prompt
 import yaml
-import os
-from bot_utilities.start_util import collect_data_ai
+from bot_utilities.start_util import *
 import imagehash
+import numpy as np
+import cv2
 
 
 with open("config.yml", "r") as config_file:
     config = yaml.safe_load(config_file)
 
-GPT_KEY = collect_data_ai("envv.env", "binary", 50)
+mongodb = config["bot"]["mongodb"]
+client = MongoClient(mongodb)
+bot_token, GPT_KEY = start(client)
 GPT_MODEL = config["bot"]["text_model"]
-image_model = config["bot"]["image_model"]
 request_queue = asyncio.Queue()
 
 openai_client = AsyncOpenAI(
@@ -28,17 +32,7 @@ openai_client = AsyncOpenAI(
     base_url = "https://api.naga.ac/v1"
 )
 
-async def sdxl(prompt):
-    response = await openai_client.images.generate(
-        model=image_model,
-        prompt=prompt,
-        n=1,  # images count
-        size="4096x4096"
-    )
-    return response.data[0].url
 
-
-    
 async def generate_response_cmd(ctx, user_input, history=[]):
 
     system_message = {
@@ -67,7 +61,33 @@ async def generate_response_cmd(ctx, user_input, history=[]):
 
     return generated_message, history
 
+async def generate_response_slash(interaction, user_input, history=[]):
 
+    system_message = {
+        "role": "system",
+        "name": "LuminaryAI",
+        "content": prompt,
+    }
+
+    member_info = {
+        "id": str(interaction.user.id),
+        "name": str(interaction.user),
+    }
+
+    user_message = {"role": "user", "name": member_info["name"], "content": user_input}
+    history.append(user_message)
+
+    messages = [system_message, *history]
+    response = await openai_client.chat.completions.create(
+        model=GPT_MODEL,
+        messages=messages
+    )
+
+    generated_message = response.choices[0].message.content
+    bot_message = {"role": "system", "name": "LuminaryAI", "content": generated_message}
+    history.append(bot_message)
+
+    return generated_message, history
 
 async def generate_response_msg(message, user_input, history=[]):
     system_message = {
@@ -257,32 +277,53 @@ def search_image(query):
         
         return image_urls
     except requests.exceptions.RequestException as e:
-        print(f"Error searching for images: {e}")
         return None
 
 
 def create_composite_image(image_urls, images_per_row=5, spacing=10, target_size=(256, 256)):
     images = []
     hashes = set()
+    buffers = []
+
+    def is_duplicate(img_hash, img_cv):
+        # Check using imagehash
+        if img_hash in hashes:
+            return True
+        
+        # Check using OpenCV for structural similarity
+        for buffer in buffers:
+            similarity = cv2.matchTemplate(buffer, img_cv, cv2.TM_CCOEFF_NORMED)
+            if np.max(similarity) > 0.15:  # Adjust similarity threshold as needed
+                return True
+        
+        return False
 
     for url in image_urls:
         try:
             response = requests.get(url)
             img = Image.open(BytesIO(response.content))
             img = img.resize(target_size, Image.LANCZOS)
+            
+            # Convert image to numpy array for OpenCV
+            img_cv = np.array(img)
+            img_cv = cv2.cvtColor(img_cv, cv2.COLOR_RGB2BGR)
+            
+            # Calculate image hash
             img_hash = imagehash.average_hash(img)
 
-            if img_hash not in hashes:
-                hashes.add(img_hash)
-                images.append(img)
-            else:
-                print(f"Skipped image: {url} - Duplicate image detected")
+            # Check for duplicates
+            if is_duplicate(img_hash, img_cv):
+                continue
+
+            # Add image and buffer if not duplicate
+            hashes.add(img_hash)
+            images.append(img)
+            buffers.append(img_cv)
+
         except Exception as e:
-            # print(f"Skipped image: {url} - Cannot identify image: {e}")
-            return
+            continue
 
     if not images:
-        print("No valid images found.")
         return None
 
     img_width, img_height = target_size
@@ -301,7 +342,6 @@ def create_composite_image(image_urls, images_per_row=5, spacing=10, target_size
         if (i + 1) % images_per_row == 0:
             y_offset += row_height
             x_offset = 0
-
 
     directory = 'cache'
     os.makedirs(directory, exist_ok=True)
