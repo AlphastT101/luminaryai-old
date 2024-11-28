@@ -1,59 +1,82 @@
-import discord
-from discord.ext import commands, tasks
+import time
+start_time = time.time()
+
 import os
-from pymongo.mongo_client import MongoClient
 import yaml
 import asyncio
-import threading
-import time, requests
+import discord
+import requests
+from discord.ext import commands, tasks
+from pymongo.mongo_client import MongoClient
 
-from slash.bot import bot_slash
+# Slash commands import
 from slash.ai import ai_slash
+from slash.fun import fun_slash
+from slash.bot import bot_slash
+from slash.information import information_slash
+from slash.moderation import moderation_slash
 
+# Prefix commands import
+from prefix.ai import ai
+from prefix.fun import fun
 from prefix.bot import bbot
 from prefix.music import music
-from prefix.fun import fun
-from prefix.general import general
-from prefix.ai import ai
 from prefix.moderation import moderation
+from prefix.information import information
 
-from events.on_cmd_error import on_cmd_error
+# Events import
 from events.on_messages import on_messages
 from events.member_join import member_join
+from events.on_cmd_error import on_cmd_error
 
-from bot_utilities.ai_utils import process_queue
+# API import
 from api import app
-from bot_utilities.start_util import start
+from bot_utilities.start_util import *
+from bot_utilities.ai_utils import process_queue
 
-
-def run_flask_app():
+def run_api():
     port = int(os.environ.get("PORT", config["flask"]["port"]))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    import uvicorn
+    uvicorn.run("api:app", host='0.0.0.0', port=port, log_level="warning")
 
+async def run_flask_app_async():
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, run_api)  # This will run run_flask_app in a separate thread
 
 with open("config.yml", "r") as config_file: config = yaml.safe_load(config_file)
 mongodb = config["bot"]["mongodb"]
 client = MongoClient(mongodb)
 bot_token, api = start(client)
+# sp_id, sp_secret = spotify_token(client) Not used for now
 
-flask_thread = None
-member_histories_msg = {}
 is_generating = {}
+member_histories_msg = {}
+flask_thread = None
 intents = discord.Intents.all()
 intents.presences = False
 activity = discord.Game(name="/help")
-bot = commands.Bot(command_prefix=config["bot"]["prefix"], intents=intents, activity=activity, help_command=None, reconnect=False)
-start_time = time.time()
+bot = commands.AutoShardedBot(
+    shard_count=2,
+    command_prefix=config["bot"]["prefix"],
+    intents=intents, activity=activity,
+    help_command=None,
+    reconnect=False
+)
 
+
+fun(bot)
+moderation(bot)
+information(bot)
 bbot(bot, start_time, client)
 music(bot)
-fun(bot)
-general(bot)
-ai(bot, member_histories_msg, client, is_generating)
-moderation(bot)
+ai(bot, member_histories_msg, is_generating)
 
+fun_slash(bot, client)
+moderation_slash(bot, client)
+information_slash(bot, client)
 bot_slash(bot, start_time, client)
 ai_slash(bot, client, member_histories_msg, is_generating)
+
 
 on_cmd_error(bot)
 member_join(bot)
@@ -66,7 +89,6 @@ async def cmdd(ctx):
         return
 
 cmd_list = []
-# Populate cmd_list with the commands
 for command in bot.commands:
     cmd_prefix = "ai." + command.name
     cmd_list.append(cmd_prefix)
@@ -77,23 +99,21 @@ on_messages(bot, cmd_list, member_histories_msg, client)
 async def sync_slash_cmd():
     await bot.tree.sync()
 
-bio = """
-Smart AI bot packed with features on Discord.
+bio = """Smart AI bot packed with features on Discord. Managed and developed by XET. AI Engine by shapes.inc
 
-Site: https://luminaryai.netlify.app
+Site: https://xet.one
 Support: https://discord.gg/hmMBe8YyJ4
-TOS: https://luminaryai.netlify.app/tos"""
+API Playground: https://play.xet.one"""
 
 @tasks.loop(seconds=30)
 async def update_bio():
     url = "https://discord.com/api/v9/applications/@me"
     headers = {"Authorization": f"Bot {bot_token}"}
     data = {"description": bio}
-    response = requests.patch(url=url, headers=headers, json=data)
+    requests.patch(url=url, headers=headers, json=data)
 
 @bot.event
 async def on_ready():
-    await bot.tree.sync()
     os.system('cls' if os.name == 'nt' else 'clear')
     print(f'We have logged in as {bot.user}')
     print(f"\033[1;38;5;46mCurrent model: {config['bot']['text_model']}\033[0m")
@@ -103,11 +123,14 @@ async def on_ready():
     update_bio.start()
     asyncio.create_task(process_queue())
 
-    # Run Flask app in a separate thread
-    flask_thread = threading.Thread(target=run_flask_app, daemon=True)
-    flask_thread.start()
-    
+    asyncio.create_task(run_flask_app_async())
+
     print("API Engine has been started!")
+    await bot.tree.sync()
+    print("Slash commands synced!")
+    print(f'Shard count: {bot.shard_count}')
+    time_difference = time.time() - start_time
+    print(f"Booted in {time_difference}s")
 
 @bot.event
 async def on_guild_join(guild):
