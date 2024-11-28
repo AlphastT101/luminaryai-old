@@ -1,13 +1,10 @@
 import discord
-from discord import Embed, app_commands
+from discord import app_commands
 from discord.ext import commands
-from bot_utilities.ai_utils import vision
-import datetime
-from bot_utilities.owner_utils import *
-import json
-import datetime
 from bot_utilities.ai_utils import *
-from bot_utilities.api_utils import check_user, insert_token
+from bot_utilities.ai_utils import vision
+from bot_utilities.owner_utils import check_blist
+from bot_utilities.api_utils import check_user, insert_token, delete_token, get_api_stat
 
 def ai_slash(bot, mongodb, member_histories_msg, is_generating):
 
@@ -49,8 +46,8 @@ def ai_slash(bot, mongodb, member_histories_msg, is_generating):
     #     else:
     #         await interaction.followup.send(embed=Embed(description="**❌ You don't have permission to use this comamnd.**", color=discord.Color.red()),)
 
-    @commands.guild_only()
     @bot.tree.command(name="vision", description="Vision an image")
+    @commands.guild_only()
     @app_commands.describe(message="Enter your message.")
     @app_commands.describe(image_link="Enter the image link.")
     async def vision_command(interaction: discord.Interaction, message: str, image_link: str):
@@ -67,9 +64,9 @@ def ai_slash(bot, mongodb, member_histories_msg, is_generating):
         response_embed.set_footer(text="Reply from LuminaryAI Image Vision. LuminaryAI does not guarantee the accuracy of the response provided. The Vision model is currently in **beta**")
         await interaction.followup.send(embed=response_embed)
     
-    
-    @commands.guild_only()
+
     @bot.tree.command(name="ask", description="Ask LuminaryAI a question!")
+    @commands.guild_only()
     @app_commands.describe(prompt="The question you want to ask LuminaryAI")
     async def ask(interaction: discord.Interaction, prompt: str):
         if await check_blist(interaction, mongodb): return
@@ -86,7 +83,6 @@ def ai_slash(bot, mongodb, member_histories_msg, is_generating):
             title="LuminaryAI - Loading",
             description="Please wait while I process your request.",
             color=0x99ccff,
-            timestamp=datetime.datetime.now(datetime.timezone.utc)
         )
         answer_embed.set_footer(text="This may take a few moments", icon_url=bot.user.avatar.url)
         answer = await interaction.followup.send(embed=answer_embed)
@@ -98,18 +94,35 @@ def ai_slash(bot, mongodb, member_histories_msg, is_generating):
             title="LuminaryAI - Response",
             description=generated_message,
             color=0x99ccff,
-            timestamp=datetime.datetime.now(datetime.timezone.utc)
         )
         answer_generated.set_footer(text="Thanks for using LuminaryAI!", icon_url=bot.user.avatar.url)
         await answer.edit(embed=answer_generated)
 
 
-    @commands.guild_only()
     @bot.tree.command(name="imagine", description="Imagine an image using LuminaryAI")
-    @app_commands.describe(prompt="Enter the prompt for the image to generate.")
-    async def imagine_pla(interaction: discord.Interaction, prompt: str):
+    @commands.guild_only()
+    @app_commands.describe(
+        prompt="Enter the prompt for the image to generate.",
+        model="Select the model to use.",
+        size="Select the size for the model.")
+    @app_commands.choices(model=[
+        app_commands.Choice(name="Flux (Best)", value="flux"),
+        app_commands.Choice(name="Dalle3", value="dalle3"),
+        app_commands.Choice(name="SDXL-Turbo", value="sdxl-turbo"),
+        app_commands.Choice(name="Polinations.ai", value="poli")
+    ],
+    size=[
+        app_commands.Choice(name="1024x1024", value="1024x1024"),
+        app_commands.Choice(name="1024x1792", value="1024x1792"),
+        app_commands.Choice(name="1792x1024" ,value="1792x1024")
+    ])
+    async def imagine_pla(interaction: discord.Interaction, prompt: str, model: app_commands.Choice[str], size: app_commands.Choice[str]):
         if await check_blist(interaction, mongodb): return
         await interaction.response.defer(ephemeral=False)
+
+        if model.value == "poli" and not size.value == "1024":
+            await interaction.followup.send(f"> **Size `{size.value}` is not available for polinations.ai**")
+            return
 
         if is_generating.get(interaction.user.id):
             await interaction.followup.send("> **You're already generating an image!**")
@@ -121,40 +134,24 @@ def ai_slash(bot, mongodb, member_histories_msg, is_generating):
         is_generating[interaction.user.id] = True
         req = await interaction.followup.send("> **Please wait while I process your request.**")
 
-        guild = bot.get_guild(1253765266115133442)
-        category = discord.utils.get(guild.categories, name="dalle3")
-        exists = discord.utils.get(guild.text_channels, name=str(interaction.user.id))
-        if exists: await exists.delete()
-        channel = await guild.create_text_channel(str(interaction.user.id), category=category)
-        sendapi = bot.get_channel(1254053747227889785)
-        await sendapi.send(f"a!reqapi {channel.id} {prompt}")
-
-        def check(m):
-            if m.content == "uhh can u say that again?":
-                return False
-            return m.content.startswith("https://files.shapes.inc/") and m.channel.id == channel.id
+        link = await image_generate(model.value, prompt, size.value)
 
         try:
-            msg = await bot.wait_for('message', check=check, timeout=120)
-            if not msg:
-                await req.edit("> **❌ Excepted a link from the API, recived a string instead.")
             embed = discord.Embed(
                 title="LuminaryAI - Image Generation",
                 description=f"Requested by: `{interaction.user}`\nPrompt: `{prompt}`",
-                timestamp=datetime.datetime.now(datetime.timezone.utc),
                 color=discord.Color.blue()
             )
             embed.set_footer(icon_url=bot.user.avatar.url, text="Thanks for using LuminaryAI!")
-            embed.set_image(url=msg.content)
+            embed.set_image(url=link)
             await req.edit(content="", embed=embed)
-        except asyncio.TimeoutError:
-            await req.edit(content="> **❌ Request timed out. Please try again later.**")
-        finally:
             is_generating[interaction.user.id] = False
-            await channel.delete()
+        except Exception as e:
+            req.edit(content="> **❌ Ouch! something went wrong.**")
 
-    @commands.guild_only()
+
     @bot.tree.command(name='poli', description="Generate images using Polinations.ai")
+    @commands.guild_only()
     @app_commands.describe(prompt="Enter the prompt for the image to generate.")
     async def poli_gen(interaction: discord.Interaction, prompt: str):
         if await check_blist(interaction, mongodb): return
@@ -165,7 +162,6 @@ def ai_slash(bot, mongodb, member_histories_msg, is_generating):
                 title="LuminaryAI - Image generation",
                 description=f"Requested by: `{interaction.user}`\nPrompt: `{prompt}`.",
                 color=0x99ccff,
-                timestamp=datetime.datetime.now(datetime.timezone.utc)
             )
             send_embed.set_footer(icon_url=bot.user.avatar.url, text="Thanks for using LuminaryAI!")
             image = await poly_image_gen(session, prompt)
@@ -174,51 +170,89 @@ def ai_slash(bot, mongodb, member_histories_msg, is_generating):
             await delete_msg.delete()
             await interaction.followup.send(content="", embed=send_embed, file=file)
 
-    @commands.guild_only()
     @bot.tree.command(name="search", description="Seaech the web for images and texts!")
+    @commands.guild_only()
     @app_commands.describe(prompt="Enter prompt for the web to search!")
     async def search(interaction: discord.Interaction, prompt: str):
         if await check_blist(interaction, mongodb): return
         await interaction.response.defer(ephemeral=False)
-        
-        result = web_search(prompt)
         image_urls = search_image(prompt)
-        if result == "": result = "❌ aww nooo, **I couldn't find any results!**"
+        await create_and_send_embed(prompt, bot, interaction, image_urls)
 
-        if not image_urls:
-            no_results = discord.Embed(
-                title="LuminaryAI - No results",
-                description="❌ aww nooo, **I couldn't find any images!**",
-                color=discord.Colour.red(),
-                timestamp=datetime.datetime.now(datetime.timezone.utc)
-            )
-            await interaction.followup.send(embed=no_results)
-            return
 
-        file_path = create_composite_image(image_urls)
-        web_embed = discord.Embed(
-            title=f"Luminary - Web Search",
-            description=f"{result}",
-            color=0x99ccff,
-            timestamp=interaction.created_at)
-
-        file_composite = discord.File(file_path, filename="composite_image.png")
-        web_embed.set_image(url="attachment://composite_image.png")
-        web_embed.set_footer(text="Thanks for using LuminaryAI!", icon_url=bot.user.avatar.url)
-        
-        await interaction.followup.send(embed=web_embed, file=file_composite)
-        
-
+    @bot.tree.command(name="generate-api-key", description="Generate an API key for XET")
     @commands.guild_only()
-    @bot.tree.command(name="generate-api-key", description="Generate an API key for LuminaryAI")
-    async def apikey(interaction: discord.Interaction):
+    async def create_api(interaction: discord.Interaction):
         if await check_blist(interaction, mongodb): return
         await interaction.response.defer(ephemeral=True)
+        
+        if interaction.guild.id != 1144903052717985806:
+            await interaction.followup.send("> :x: **You're not allowed to generate an API key in this server. Join XET to generate an API key: https://discord.com/invite/hmMBe8YyJ4**")
+            channel = interaction.guild.get_channel(1279262113503645706)
+            await channel.send(f"{interaction.user.mention} | {interaction.user.id} Failed to generate an API key in {interaction.guild}")
+            return
+
+        role = interaction.guild.get_role(1279261339574861895)
+        if role not in interaction.user.roles:  # Check if the user has the role
+            await interaction.followup.send("> :x: **You don't have the required role `verified` to generate an API key.**")
+            channel = interaction.guild.get_channel(1279262113503645706)
+            await channel.send(f"{interaction.user.mention} | {interaction.user.id} Failed to generate an API key in {interaction.guild} as the user is not verified")
+            return
+        
         check = await check_user(mongodb, interaction.user.id)
-    
+        
         if check:
             await interaction.followup.send("> ❌ **You already have an API token! You can generate only one API token.**")
             return
         
         token = await insert_token(mongodb, interaction.user.id)
-        await interaction.followup.send(f"> ✅ **API token is generated successfully. Do not share this key with anyone, even they are from LuminaryAI!**\n* **Join our support server for help on how to use the API Key.**\n* **API token:**\n```bash\n{token}```\n")
+        await interaction.followup.send(f"> ✅ **API token is generated successfully. Do not share this key with anyone, even if they are from LuminaryAI!**\n* **Join our support server for help on how to use the API Key.**\n* **API token:**\n```bash\n{token}```\n")
+        channel = interaction.guild.get_channel(1279262113503645706)
+        await channel.send(f"{interaction.user.mention} Generated an API key in <#{interaction.channel.id}>.")
+
+
+
+    @bot.tree.command(name="delete-api-key", description="Delete Your API key for XET")
+    @commands.guild_only()
+    async def delete_api(interaction: discord.Interaction):
+        if await check_blist(interaction, mongodb): return
+        await interaction.response.defer(ephemeral=False)
+        check = await check_user(mongodb, interaction.user.id)
+
+        if interaction.guild.id != 1144903052717985806:
+            await interaction.followup.send("> :x: **You're not allowed to delete API key in this server. Join XET to generate an API key:  https://discord.com/invite/hmMBe8YyJ4**")
+            channel = interaction.guild.get_channel(1279262113503645706)
+            await channel.send(f"{interaction.user.mention} | {interaction.user.id} Failed to delete API key in {interaction.guild}")
+            return
+        
+        role = interaction.guild.get_role(1279261339574861895)
+        if role not in interaction.user.roles:  # Check if the user has the role
+            await interaction.followup.send("> :x: **You don't have the required role `verified` to delete an API key.**")
+            channel = interaction.guild.get_channel(1279262113503645706)
+            await channel.send(f"{interaction.user.mention} | {interaction.user.id} Failed to delete API key in {interaction.guild} as the user is not verified.")
+            return
+        if check:
+            deleted = await delete_token(mongodb, interaction.user.id)
+            if deleted:
+                await interaction.followup.send("> ✅ **API token is deleted successfully**")
+                channel = interaction.guild.get_channel(1279262113503645706)
+                await channel.send(f"{interaction.user.mention} Deleted an API key in <#{interaction.channel.id}>.")
+            else:
+                await interaction.followup.send("> ❌ **Failed to delete API token**")
+        else: await interaction.followup.send("> ❌ **You don't have an API key!**")
+
+
+    @bot.tree.command(name="api-stats", description="View our API stats")
+    @commands.guild_only()
+    async def delete_api(interaction: discord.Interaction):
+        if await check_blist(interaction, mongodb): return
+        await interaction.response.defer(ephemeral=False)
+        stats = await get_api_stat(mongodb)
+
+        embed = discord.Embed(
+            title="XET API Stats",
+            description=stats,
+            color=discord.Color.blue()
+        )
+        embed.set_footer(text="Current XET API Stats")
+        await interaction.followup.send(embed=embed)
