@@ -1,9 +1,12 @@
 bot:
   prefix: "ai."
-  text_model: "gemini-pro"
-  image_model: "playground-v2.5"
-  mongodb: ""
+  text_model: "google/gemma-2-9b-it:free"
+  mongodb: "mongodb://localhost:27017/"
+  webhook_images: "" # Replace with urs
 flask:
-  port: 6077
+  port: 80
   guild_id: 1253765266115133442
   send_req_channel: 1254053747227889785
+  guild_id_verify: 1144903052717985806
+  upload2discord: False
+  logging: True
